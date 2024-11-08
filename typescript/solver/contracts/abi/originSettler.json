@@ -1,0 +1,48 @@
+[
+  {
+    "name": "Open",
+    "type": "event",
+    "inputs": [
+      { "type": "bytes32", "name": "orderId", "indexed": true },
+      {
+        "type": "tuple",
+        "name": "resolvedOrder",
+        "components": [
+          { "type": "address", "name": "user" },
+          { "type": "uint64", "name": "originChainId" },
+          { "type": "uint32", "name": "openDeadline" },
+          { "type": "uint32", "name": "fillDeadline" },
+          {
+            "type": "tuple[]",
+            "name": "maxSpent",
+            "components": [
+              { "type": "bytes32", "name": "token" },
+              { "type": "uint256", "name": "amount" },
+              { "type": "bytes32", "name": "recipient" },
+              { "type": "uint64", "name": "chainId" }
+            ]
+          },
+          {
+            "type": "tuple[]",
+            "name": "minReceived",
+            "components": [
+              { "type": "bytes32", "name": "token" },
+              { "type": "uint256", "name": "amount" },
+              { "type": "bytes32", "name": "recipient" },
+              { "type": "uint64", "name": "chainId" }
+            ]
+          },
+          {
+            "type": "tuple[]",
+            "name": "fillInstructions",
+            "components": [
+              { "type": "uint64", "name": "destinationChainId" },
+              { "type": "bytes32", "name": "destinationSettler" },
+              { "type": "bytes", "name": "originData" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

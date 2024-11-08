@@ -7,6 +7,16 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": false,
+    "lib": [
+      "ES2015",
+      "ES2016",
+      "ES2017",
+      "ES2018",
+      "ES2019",
+      "ES2020",
+      "ES2021",
+      "ES2022"
+    ],
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "noEmitOnError": true,
@@ -21,7 +31,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "strict": true,
-    "target": "esnext"
+    "target": "es2022"
   },
   "ts-node": {
     "experimentalSpecifierResolution": "node",

@@ -18,5 +18,6 @@
   "workspaces": [
     "typescript/solver",
     "solidity"
-  ]
+  ],
+  "packageManager": "yarn@4.5.1"
 }

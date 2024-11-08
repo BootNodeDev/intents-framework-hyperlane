@@ -1,21 +1,37 @@
 {
   "name": "solver",
+  "type": "module",
   "version": "0.1.0",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "solver": "node ./dist/index.js",
+    "build": "tsc",
+    "dev": "tsx --watch ./index.ts",
+    "prettier:check": "prettier . --check",
+    "prettier:write": "prettier . --write",
+    "contracts:typegen": "typechain --node16-modules --target ethers-v5 --out-dir contracts/typechain contracts/abi/*.json",
+    "postinstall": "yarn contracts:typegen"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/BootNodeDev/intents-framework/typescript/solver"
   },
-  "author": "",
+  "author": "bootnode.dev",
   "license": "Apache-2.0",
   "description": "",
   "devDependencies": {
+    "@typechain/ethers-v5": "^11.1.2",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.2",
+    "typechain": "^8.3.2",
     "typescript": "^5.6.3"
   },
   "dependencies": {
+    "@hyperlane-xyz/registry": "^4.10.0",
     "@hyperlane-xyz/sdk": "^5.5.0",
-    "ethers": "^5.7.2"
+    "@hyperlane-xyz/utils": "^5.6.0",
+    "chalk": "^5.3.0",
+    "dotenv-flow": "^4.1.0",
+    "ethers": "^5.7.2",
+    "pino": "^9.5.0"
   }
 }
