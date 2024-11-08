@@ -15,7 +15,7 @@ contract DeployEcoAdapter is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        EcoAdapter adapter = new EcoAdapter{salt: keccak256(abi.encode("EcoAdapter.0.0.1"))}(owner, inbox);
+        EcoAdapter adapter = new EcoAdapter{salt: keccak256(abi.encode("EcoAdapter.0.0.2"))}(owner, inbox);
 
         vm.stopBroadcast();
 

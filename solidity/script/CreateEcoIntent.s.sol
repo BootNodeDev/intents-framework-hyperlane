@@ -26,7 +26,7 @@ contract CreateEcoIntent is Script {
         address receiverAddress = vm.envAddress("ECO_RECEIVER_ADDRESS");
         uint256 receiverAmount = vm.envUint("ECO_RECEIVER_AMOUNT");
         address[] memory rewardTokens = vm.envAddress("ECO_REWARD_TOKENS", ",");
-        uint256[] memory rewardAmounts = vm.envUint("ECO_RECEIVER_AMOUNT", ",");
+        uint256[] memory rewardAmounts = vm.envUint("ECO_REWARD_AMOUNT", ",");
         address prover = vm.envAddress("ECO_PROVER");
 
         for (uint i = 0; i < rewardTokens.length; i++) {

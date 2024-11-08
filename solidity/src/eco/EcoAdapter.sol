@@ -8,6 +8,8 @@ import { TypeCasts } from "@hyperlane-xyz/libs/TypeCasts.sol";
 
 import { IInbox } from "./IInbox.sol";
 
+import { console2 } from "forge-std/console2.sol";
+
 contract EcoAdapter is Ownable {
     using TypeCasts for address;
     using SafeERC20 for IERC20;
@@ -45,7 +47,7 @@ contract EcoAdapter is Ownable {
     }
 
     function isTransfer(bytes calldata _data) public pure returns (bool) {
-        bytes4 functionSelector = abi.decode(_data[:4], (bytes4));
+        bytes4 functionSelector = bytes4(_data[:4]);
         return functionSelector == IERC20.transfer.selector;
     }
 

@@ -34,6 +34,10 @@
     "deployToken": "forge script script/DeployToken.s.sol:DeployToken -f $NETWORK --broadcast --verify --slow -vvv",
     "run:deployToken": "dotenv-run-script deployToken",
     "openOrder": "forge script script/OpenOrder.s.sol:OpenOrder -f $NETWORK --broadcast --verify --slow -vvv",
-    "run:openOrder": "dotenv-run-script openOrder"
+    "run:openOrder": "dotenv-run-script openOrder",
+    "deployEcoAdapter": "forge script script/DeployEcoAdapter.s.sol:DeployEcoAdapter -f $NETWORK --broadcast --verify --slow -vvv",
+    "run:deployEcoAdapter": "dotenv-run-script deployEcoAdapter",
+    "createEcoIntent": "forge script script/CreateEcoIntent.s.sol:CreateEcoIntent -f $NETWORK --broadcast --verify --slow -vvv",
+    "run:createEcoIntent": "dotenv-run-script createEcoIntent"
   }
 }
