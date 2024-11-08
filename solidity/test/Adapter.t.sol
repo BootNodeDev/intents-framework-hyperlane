@@ -13,8 +13,6 @@ import {EcoAdapter} from "../src/eco/EcoAdapter.sol";
 
 contract Adapter is Test {
     EcoAdapter internal adapter;
-    // = EcoAdapter(0xaE78f7cb34A3E6945c6eE734056E5e7c72c26F36);
-    // address permit2 = 0x000000000022D473030F116dDEE9F6B43aC78BA3;
     address solver = 0x6AC4B73Ae41D40E7e920aB5Ff1a97211DAF67949;
     address prover = 0x39cBD6e1C0E6a30dF33428a54Ac3940cF33B23D6;
     address itt = 0x5f94BC7Fb4A2779fef010F96b496cD36A909E818;
