@@ -13,16 +13,19 @@ import {EcoAdapter} from "../src/eco/EcoAdapter.sol";
 
 contract Adapter is Test {
     EcoAdapter internal adapter;
-    address solver = 0x6AC4B73Ae41D40E7e920aB5Ff1a97211DAF67949;
-    address prover = 0x39cBD6e1C0E6a30dF33428a54Ac3940cF33B23D6;
-    address itt = 0x5f94BC7Fb4A2779fef010F96b496cD36A909E818;
-    address inbox = 0xB73fD43C293b250Cb354c4631292A318248FB33E;
+    address internal solver = 0x6AC4B73Ae41D40E7e920aB5Ff1a97211DAF67949;
+    address internal prover = 0x39cBD6e1C0E6a30dF33428a54Ac3940cF33B23D6;
+    address internal itt = 0x5f94BC7Fb4A2779fef010F96b496cD36A909E818;
+    address internal inbox = 0xB73fD43C293b250Cb354c4631292A318248FB33E;
+    address internal receiver = 0xd897155e982B96fe713A1546E3C89995a9436F82;
 
     uint256 internal forkId;
 
     uint256 internal sourceChainId = 11155420;
     uint256 internal destChainId = 84532;
     uint256 internal expiryTime = 4294967295;
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
 
     function setUp() public {
         forkId = vm.createSelectFork(vm.envString("BASE_RPC_URL"), 17609373);
@@ -56,7 +59,7 @@ contract Adapter is Test {
         _targets[0] = itt;
 
         bytes[] memory _data = new bytes[](1);
-        _data[0] = abi.encodeWithSelector(ERC20.transfer.selector, inbox, 1000);
+        _data[0] = abi.encodeWithSelector(ERC20.transfer.selector, receiver, 1000);
 
         bytes32[] memory _hashes = new bytes32[](1);
          _hashes[0] = encodeHash(_targets, _data, _nonce);
@@ -64,6 +67,14 @@ contract Adapter is Test {
         uint256 testFee = adapter.fetchFee(sourceChainId, _hashes, _claimants, prover);
 
         ERC20(itt).approve(address(adapter), 1000);
+
+        vm.expectEmit(false, false, false, true);
+        emit Transfer(solver, inbox, 1000);
+
+        vm.expectEmit(false, false, false, true);
+        emit Transfer(inbox, receiver, 1000);
+
+        uint256 balanceBefore = ERC20(itt).balanceOf(receiver);
 
         adapter.fulfillHyperInstant{value: testFee}(
             sourceChainId,
@@ -75,6 +86,8 @@ contract Adapter is Test {
             _hashes[0],
             prover
         );
+
+        assertEq(ERC20(itt).balanceOf(receiver), balanceBefore + 1000);
 
         vm.stopPrank();
     }
