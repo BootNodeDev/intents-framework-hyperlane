@@ -305,6 +305,7 @@ contract Hyperlane7683 is GasRouter, Base7683 {
 
         if (_orderId != OrderEncoder.id(orderData)) revert InvalidOrderId();
         if (block.timestamp > orderData.fillDeadline) revert OrderFillExpired();
+        if (orderData.destinationDomain != localDomain) revert InvalidOrderDomain();
 
         IERC20(TypeCasts.bytes32ToAddress(orderData.outputToken)).safeTransferFrom(
             msg.sender, TypeCasts.bytes32ToAddress(orderData.recipient), orderData.amountOut
