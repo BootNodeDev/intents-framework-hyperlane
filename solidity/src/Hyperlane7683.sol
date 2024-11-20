@@ -82,7 +82,9 @@ contract Hyperlane7683 is GasRouter, Base7683 {
         for (uint256 i = 0; i < _orderIds.length; i += 1) {
             if (orderStatus[_orderIds[i]] != FILLED) revert InvalidOrderStatus();
 
-            orderStatus[_orderIds[i]] = SETTLED;
+            // It may be good idea not to change the status here (on destination) but only on the origin.
+            // If the filler fills the order and settles it before it is opened on the origin, there should be a way for
+            // the filler to retry settling the order.
             ordersFillerData[i] = orderFillerData[_orderIds[i]];
         }
 
