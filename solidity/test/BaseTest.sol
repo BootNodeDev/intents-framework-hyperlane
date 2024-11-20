@@ -2,6 +2,7 @@
 pragma solidity ^0.8.25;
 
 import { Test, Vm } from "forge-std/Test.sol";
+import { console2 } from "forge-std/console2.sol";
 
 import { DeployPermit2 } from "@uniswap/permit2/test/utils/DeployPermit2.sol";
 import { IEIP712 } from "@uniswap/permit2/src/interfaces/IEIP712.sol";

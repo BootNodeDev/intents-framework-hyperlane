@@ -169,17 +169,6 @@ contract Base7683Test is BaseTest {
         users.push(address(base));
     }
 
-    function prepareOnchainOrder(
-        bytes memory orderData,
-        uint32 fillDeadline
-    )
-        internal
-        pure
-        returns (OnchainCrossChainOrder memory)
-    {
-        return _prepareOnchainOrder(orderData, fillDeadline, "someOrderType");
-    }
-
     function prepareGaslessOrder(
         bytes memory orderData,
         uint256 permitNonce,
@@ -206,7 +195,7 @@ contract Base7683Test is BaseTest {
     function test_open_works(uint32 _fillDeadline) public {
         bytes memory orderData = abi.encode("some order data");
         OnchainCrossChainOrder memory order =
-            prepareOnchainOrder(orderData, _fillDeadline);
+            _prepareOnchainOrder(orderData, _fillDeadline, "someOrderType");
 
         vm.startPrank(kakaroto);
         inputToken.approve(address(base), amount);
@@ -235,11 +224,24 @@ contract Base7683Test is BaseTest {
         vm.stopPrank();
     }
 
-    // TODO test_open_InvalidNonce
+    function test_open_InvalidNonce(uint32 _fillDeadline) public {
+        bytes memory orderData = abi.encode("some order data");
+        OnchainCrossChainOrder memory order =
+            _prepareOnchainOrder(orderData, _fillDeadline, "someOrderType");
+
+        vm.startPrank(kakaroto);
+
+        base.invalidateUnorderedNonces(1);
+
+        vm.expectRevert(Base7683.InvalidNonce.selector);
+        base.open(order);
+
+        vm.stopPrank();
+    }
 
     // openFor
     function test_openFor_works(uint32 _fillDeadline, uint32 _openDeadline) public {
-        vm.assume(_openDeadline > block.timestamp);
+        vm.assume(_openDeadline >= block.timestamp);
         vm.prank(kakaroto);
         inputToken.approve(permit2, type(uint256).max);
 
@@ -260,7 +262,7 @@ contract Base7683Test is BaseTest {
         );
 
         vm.startPrank(karpincho);
-        inputToken.approve(address(base), amount);
+        // inputToken.approve(address(base), amount);
 
         assertTrue(base.isValidNonce(kakaroto, 1));
         uint256[] memory balancesBefore = _balances(inputToken);
@@ -286,16 +288,90 @@ contract Base7683Test is BaseTest {
         vm.stopPrank();
     }
 
-    // TODO test_openFor_OrderOpenExpired
-    // TODO test_openFor_InvalidGaslessOrderSettler
-    // TODO test_openFor_InvalidGaslessOrderOriginChain
-    // TODO test_openFor_InvalidNonce
+    function test_openFor_OrderOpenExpired(uint32 _fillDeadline, uint32 _openDeadline) public {
+        vm.assume(_openDeadline < block.timestamp);
+
+        uint256 permitNonce = 0;
+        bytes memory orderData = abi.encode("some order data");
+        GaslessCrossChainOrder memory order =
+            prepareGaslessOrder(orderData, permitNonce, _openDeadline, _fillDeadline);
+
+        bytes memory sig = new bytes(0);
+
+        vm.startPrank(karpincho);
+
+        vm.expectRevert(Base7683.OrderOpenExpired.selector);
+        base.openFor(order, sig, new bytes(0));
+
+        vm.stopPrank();
+    }
+
+    function test_openFor_InvalidGaslessOrderSettler(uint32 _fillDeadline, uint32 _openDeadline) public {
+        vm.assume(_openDeadline > block.timestamp);
+
+        uint256 permitNonce = 0;
+        bytes memory orderData = abi.encode("some order data");
+        GaslessCrossChainOrder memory order =
+            prepareGaslessOrder(orderData, permitNonce, _openDeadline, _fillDeadline);
+
+        order.originSettler = makeAddr("someOtherSettler");
+
+        bytes memory sig = new bytes(0);
+
+        vm.startPrank(karpincho);
+
+        vm.expectRevert(Base7683.InvalidGaslessOrderSettler.selector);
+        base.openFor(order, sig, new bytes(0));
+
+        vm.stopPrank();
+    }
+
+    function test_openFor_InvalidGaslessOrderOrigin(uint32 _fillDeadline, uint32 _openDeadline) public {
+        vm.assume(_openDeadline > block.timestamp);
+
+        uint256 permitNonce = 0;
+        bytes memory orderData = abi.encode("some order data");
+        GaslessCrossChainOrder memory order =
+            prepareGaslessOrder(orderData, permitNonce, _openDeadline, _fillDeadline);
+
+        order.originChainId = 3;
+
+        bytes memory sig = new bytes(0);
+
+        vm.startPrank(karpincho);
+
+        vm.expectRevert(Base7683.InvalidGaslessOrderOrigin.selector);
+        base.openFor(order, sig, new bytes(0));
+
+        vm.stopPrank();
+    }
+    function test_openFor_InvalidNonce(uint32 _fillDeadline, uint32 _openDeadline) public {
+        vm.assume(_openDeadline > block.timestamp);
+
+        uint256 permitNonce = 0;
+        bytes memory orderData = abi.encode("some order data");
+        GaslessCrossChainOrder memory order =
+            prepareGaslessOrder(orderData, permitNonce, _openDeadline, _fillDeadline);
+
+        vm.startPrank(kakaroto);
+        base.invalidateUnorderedNonces(1);
+        vm.stopPrank();
+
+        bytes memory sig = new bytes(0);
+
+        vm.startPrank(karpincho);
+
+        vm.expectRevert(Base7683.InvalidNonce.selector);
+        base.openFor(order, sig, new bytes(0));
+
+        vm.stopPrank();
+    }
 
     // resolve
     function test_resolve_works(uint32 _fillDeadline) public {
         bytes memory orderData = abi.encode("some order data");
         OnchainCrossChainOrder memory order =
-            prepareOnchainOrder(orderData, _fillDeadline);
+            _prepareOnchainOrder(orderData, _fillDeadline, "someOrderType");
 
         vm.prank(kakaroto);
         ResolvedCrossChainOrder memory resolvedOrder = base.resolve(order);
@@ -358,5 +434,41 @@ contract Base7683Test is BaseTest {
         vm.stopPrank();
     }
 
-    // TODO test_fill_InvalidOrderStatus
+    function test_fill_InvalidOrderStatus_FILLED() public {
+        bytes memory orderData = abi.encode("some order data");
+        bytes32 orderId = "someOrderId";
+
+        vm.startPrank(vegeta);
+
+        bytes memory fillerData = abi.encode(TypeCasts.addressToBytes32(vegeta));
+
+        base.fill(orderId, orderData, fillerData);
+
+        vm.expectRevert(Base7683.InvalidOrderStatus.selector);
+        base.fill(orderId, orderData, fillerData);
+
+        vm.stopPrank();
+    }
+
+    function test_fill_InvalidOrderStatus_OPENED(uint32 _fillDeadline) public {
+        bytes memory orderData = abi.encode("some order data");
+        OnchainCrossChainOrder memory order =
+            _prepareOnchainOrder(orderData, _fillDeadline, "someOrderType");
+
+        vm.startPrank(kakaroto);
+        inputToken.approve(address(base), amount);
+        base.open(order);
+        vm.stopPrank();
+
+        bytes32 orderId = keccak256("someId");
+
+        vm.startPrank(vegeta);
+
+        bytes memory fillerData = abi.encode(TypeCasts.addressToBytes32(vegeta));
+
+        vm.expectRevert(Base7683.InvalidOrderStatus.selector);
+        base.fill(orderId, orderData, fillerData);
+
+        vm.stopPrank();
+    }
 }
