@@ -757,10 +757,6 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
         destinationRouter.refund{ value: gasPaymentQuote }(orders);
     }
 
-
-    function test__handleRefundOrder_InvalidOrderStatus() public enrollRouters {}
-    function test__handleRefundOrder_InvalidDomain() public enrollRouters {}
-
     function test__fillOrder_InvalidOrderId() public enrollRouters {
         uint32 _fillDeadline = uint32(block.timestamp) + 100;
 
