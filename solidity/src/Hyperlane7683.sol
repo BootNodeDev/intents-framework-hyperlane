@@ -129,7 +129,7 @@ contract Hyperlane7683 is GasRouter, Base7683 {
 
     // ============ Internal Functions ============
 
-    function _handle(uint32 _origin, bytes32, bytes calldata _message) internal virtual override {
+    function _handle(uint32, bytes32, bytes calldata _message) internal virtual override {
         (bool _settle, bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) =
             Hyperlane7683Message.decode(_message);
 
@@ -138,21 +138,22 @@ contract Hyperlane7683 is GasRouter, Base7683 {
             if (orderStatus[_orderIds[i]] != OPENED) continue;
 
             if (_settle) {
-                _handleSettleOrder(_orderIds[i], abi.decode(_ordersFillerData[i], (bytes32)), _origin);
+                _handleSettleOrder(_orderIds[i], abi.decode(_ordersFillerData[i], (bytes32)));
             } else {
-                _handleRefundOrder(_orderIds[i], _origin);
+                _handleRefundOrder(_orderIds[i]);
             }
         }
     }
 
-    function _handleSettleOrder(bytes32 _orderId, bytes32 _receiver, uint32 _settlingDomain) internal {
-        if (orderStatus[_orderId] != OPENED) revert InvalidOrderStatus();
-
+    /**
+     * @dev There is no need to check for if order destinationDomain is the _handle origin since it is checked when
+     * filling the order and only filled orders can be settled. Regarding the originDomain it gets checked indirectly
+     * on _handle with if (orderStatus[_orderIds[i]] != OPENED) continue;
+     */
+    function _handleSettleOrder(bytes32 _orderId, bytes32 _receiver) internal {
         ResolvedCrossChainOrder memory resolvedOrder = abi.decode(orders[_orderId], (ResolvedCrossChainOrder));
 
         OrderData memory orderData = OrderEncoder.decode(resolvedOrder.fillInstructions[0].originData);
-
-        if (orderData.destinationDomain != _settlingDomain) revert InvalidDomain();
 
         orderStatus[_orderId] = SETTLED;
 
@@ -163,14 +164,15 @@ contract Hyperlane7683 is GasRouter, Base7683 {
         IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransfer(receiver, orderData.amountIn);
     }
 
-    function _handleRefundOrder(bytes32 _orderId, uint32 _refundingDomain) internal {
-        if (orderStatus[_orderId] != OPENED) revert InvalidOrderStatus();
-
+    /**
+     * @dev There is no need to check for if order destinationDomain is the _handle origin since it is checked on
+     * _refundOrder when the refund is requested. Regarding the originDomain it gets checked indirectly
+     * on _handle with if (orderStatus[_orderIds[i]] != OPENED) continue;
+     */
+    function _handleRefundOrder(bytes32 _orderId) internal {
         ResolvedCrossChainOrder memory resolvedOrder = abi.decode(orders[_orderId], (ResolvedCrossChainOrder));
 
         OrderData memory orderData = OrderEncoder.decode(resolvedOrder.fillInstructions[0].originData);
-
-        if (orderData.destinationDomain != _refundingDomain) revert InvalidDomain();
 
         orderStatus[_orderId] = REFUNDED;
 
