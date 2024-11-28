@@ -1,9 +1,11 @@
-solverName: "Eco"
-intentSource:
-  address: "0x734a3d5a8D691d9b911674E682De5f06517c79ec"
-  chainId: 11155420
-  chainName: "optimism-sepolia"
-adapters:
-  - address: "0x218FB5210d4eE248f046F3EC8B5Dd1c7Bc0756e5"
-    chainId: 84532
-    chainName: "base-sepolia"
+solverName: "The Compact"
+arbiters:
+  - address: "0x088470910056221862d18fF2e65ffaeC96ec6dA4"
+    chainId: 1
+    chainName: "ethereum"
+  - address: "0x57F0638d4fba79DB978c4eE1B73d469ea21014b2"
+    chainId: 10
+    chainName: "optimism"
+  - address: "0x43b60b47764B6460c96349A1B414214BBa7F22c9"
+    chainId: 8453
+    chainName: "base"

@@ -1,30 +1,11 @@
-
-export type Compact = {
-  hash: string;
-  claimChain: number;
-  compact: {
-    arbiter: string;
-    sponsor: string;
-    nonce: string;
-    expires: string;
-    id: string;
-    amount: string;
-  };
-  intent: {
-    token: string;
-    amount: string;
-    fee: string;
-    chainId: number;
-    recipient: string;
-  };
-  allocatorSignature: string;
-  sponsorSignature: string;
-  filled: boolean;
-};
+import type { Compact } from "./types.js";
 
 export const create = () => {
   return function (handler: (args: Compact) => void) {
-    poll<Compact>("https://the-compact-allocator-api.vercel.app/api/compacts/?filled=false", handler);
+    poll<Compact>(
+      "https://the-compact-allocator-api.vercel.app/api/compacts/?filled=false",
+      handler,
+    );
   };
 };
 
@@ -33,34 +14,53 @@ interface PollOptions {
   timeout?: number;
 }
 
-/**
- * Polling wrapper for a GET request.
- *
- * @param {string} url - The URL to fetch data from.
- * @param {function} handler - Handler function.
- * @param {object} options - Configuration options.
- * @param {number} options.interval - Interval between requests (in milliseconds).
- * @returns {void} - Nothing.
- */
-function poll<TResolve>(url: string, handler: (args: TResolve) => void, options: PollOptions = {}) {
+function poll<TResolve>(
+  url: string,
+  handler: (args: TResolve) => void,
+  options: PollOptions = {},
+) {
   const {
     interval = 4_000, // Default polling interval: 1 second
   } = options;
 
-    const poller = async () => {
-      console.log("Polling...");
-      const response = await fetch(url);
+  const poller = async () => {
+    console.log("Polling...");
+    const response = await fetch(url);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
 
-      const data = await response.json();
-
-      handler(data.data.compact);
-
-      setTimeout(poller, interval);
+    const {
+      data: { compact: _compact },
+    } = await response.json();
+    const compact = {
+      hash: _compact.hash,
+      claimChain: _compact.claimChain,
+      compact: {
+        arbiter: _compact.compact_arbiter,
+        sponsor: _compact.compact_sponsor,
+        nonce: _compact.compact_nonce,
+        expires: _compact.compact_expires,
+        id: _compact.compact_id,
+        amount: _compact.compact_amount,
+      },
+      intent: {
+        token: _compact.intent_token,
+        amount: _compact.intent_amount,
+        fee: _compact.intent_fee,
+        chainId: _compact.intent_chainId,
+        recipient: _compact.intent_recipient,
+      },
+      allocatorSignature: _compact.allocatorSignature,
+      sponsorSignature: _compact.sponsorSignature,
+      filled: _compact.filled,
     };
 
-    poller();
+    handler(compact as TResolve);
+
+    setTimeout(poller, interval);
+  };
+
+  poller();
 }

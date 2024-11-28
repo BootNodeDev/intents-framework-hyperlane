@@ -2,35 +2,26 @@ import { Zero } from "@ethersproject/constants";
 import { type MultiProvider } from "@hyperlane-xyz/sdk";
 import { type Result } from "@hyperlane-xyz/utils";
 
-import { type BigNumber } from "ethers";
-
-import type { IntentCreatedEventObject } from "../../typechain/eco/contracts/IntentSource.js";
 import { Erc20__factory } from "../../typechain/factories/contracts/Erc20__factory.js";
-import { EcoAdapter__factory } from "../../typechain/factories/eco/contracts/EcoAdapter__factory.js";
-import type { EcoMetadata, IntentData } from "./types.js";
+import type { Compact, CompactMetadata } from "./types.js";
 import {
   log,
   metadata,
   retrieveOriginInfo,
   retrieveTargetInfo,
-  withdrawRewards,
 } from "./utils.js";
-import { Compact } from "./listener.js";
+import { HyperlaneArbiter__factory } from "../../typechain/factories/compact/contracts/HyperlaneArbiter__factory.js";
 
 export const create = (multiProvider: MultiProvider) => {
-  const { adapters, intentSource, solverName } = setup();
+  const { solverName } = setup();
 
-  return async function eco(intent: Compact) {
-    const origin = await retrieveOriginInfo(
-      intent,
-      intentSource,
-      multiProvider,
-    );
-    const target = await retrieveTargetInfo(intent, adapters, multiProvider);
+  return async function compact(intent: Compact) {
+    const origin = await retrieveOriginInfo(intent, multiProvider);
+    const target = await retrieveTargetInfo(intent, multiProvider);
 
     log.info({
       msg: "Intent Indexed",
-      intent: `${solverName}-${intent._hash}`,
+      intent: `${solverName}-${intent.hash}`,
       origin: origin.join(", "),
       target: target.join(", "),
     });
@@ -57,7 +48,7 @@ export const create = (multiProvider: MultiProvider) => {
       solverName,
     );
 
-    await withdrawRewards(intent, intentSource, multiProvider, solverName);
+    // await withdrawRewards(intent, intentSource, multiProvider, solverName);
   };
 };
 
@@ -66,16 +57,13 @@ function setup() {
     metadata.solverName = "UNKNOWN_SOLVER";
   }
 
-  if (!metadata.adapters.every(({ address }) => address)) {
-    throw new Error("EcoAdapter address must be provided");
-  }
-
-  if (!metadata.intentSource.chainId) {
-    throw new Error("IntentSource chain ID must be provided");
-  }
-
-  if (!metadata.intentSource.address) {
-    throw new Error("IntentSource address must be provided");
+  if (
+    !metadata.arbiters.every(
+      ({ address, chainId, chainName }) =>
+        !!address && !!chainId && !!chainName,
+    )
+  ) {
+    throw new Error("Arbiter address must be provided");
   }
 
   return metadata;
@@ -84,45 +72,34 @@ function setup() {
 // We're assuming the filler will pay out of their own stock, but in reality they may have to
 // produce the funds before executing each leg.
 async function prepareIntent(
-  intent: IntentCreatedEventObject,
-  adapters: EcoMetadata["adapters"],
+  intent: Compact,
+  arbiters: CompactMetadata["arbiters"],
   multiProvider: MultiProvider,
   solverName: string,
 ): Promise<Result<IntentData>> {
   log.info({
     msg: "Evaluating filling Intent",
-    intent: `${solverName}-${intent._hash}`,
+    intent: `${solverName}-${intent.hash}`,
   });
 
   try {
-    const destinationChainId = intent._destinationChain.toNumber();
-    const adapter = adapters.find(
+    const destinationChainId = intent.intent.chainId;
+    const arbiter = arbiters.find(
       ({ chainId }) => chainId === destinationChainId,
     );
 
-    if (!adapter) {
+    if (!arbiter) {
       return {
-        error: "No adapter found for destination chain",
+        error: "No arbiter found for destination chain",
         success: false,
       };
     }
 
     const signer = multiProvider.getSigner(destinationChainId);
-    const erc20Interface = Erc20__factory.createInterface();
 
-    const requiredAmountsByTarget = intent._targets.reduce<{
-      [tokenAddress: string]: BigNumber;
-    }>((acc, target, index) => {
-      const [, amount] = erc20Interface.decodeFunctionData(
-        "transfer",
-        intent._data[index],
-      ) as [string, BigNumber];
-
-      acc[target] ||= Zero;
-      acc[target] = acc[target].add(amount);
-
-      return acc;
-    }, {});
+    const requiredAmountsByTarget = {
+      [intent.intent.token]: intent.intent.amount,
+    };
 
     const fillerAddress =
       await multiProvider.getSignerAddress(destinationChainId);
@@ -143,65 +120,54 @@ async function prepareIntent(
     }
 
     log.debug(
-      `${solverName} - Approving tokens: ${intent._hash}, for ${adapter.address}`,
+      `${solverName} - Approving tokens: ${intent.hash}, for ${arbiter.address}`,
     );
     await Promise.all(
       Object.entries(requiredAmountsByTarget).map(
         async ([target, requiredAmount]) => {
           const erc20 = Erc20__factory.connect(target, signer);
 
-          const tx = await erc20.approve(adapter.address, requiredAmount);
+          const tx = await erc20.approve(arbiter.address, requiredAmount);
           await tx.wait();
         },
       ),
     );
 
-    return { data: { adapter }, success: true };
+    return { data: { arbiter }, success: true };
   } catch (error: any) {
     return {
-      error: error.message ?? "Failed to prepare Eco Intent.",
+      error: error.message ?? "Failed to prepare Compact Intent.",
       success: false,
     };
   }
 }
 
 async function fill(
-  intent: IntentCreatedEventObject,
-  adapter: EcoMetadata["adapters"][number],
-  intentSource: EcoMetadata["intentSource"],
+  intent: Compact,
+  arbiterInfo: CompactMetadata["arbiters"][number],
   multiProvider: MultiProvider,
   solverName: string,
 ): Promise<void> {
   log.info({
     msg: "Filling Intent",
-    intent: `${solverName}-${intent._hash}`,
+    intent: `${solverName}-${intent.hash}`,
   });
 
-  const _chainId = intent._destinationChain.toString();
+  const _chainId = intent.intent.chainId;
 
   const filler = multiProvider.getSigner(_chainId);
-  const ecoAdapter = EcoAdapter__factory.connect(adapter.address, filler);
-
-  const claimantAddress = await multiProvider.getSignerAddress(
-    intentSource.chainId,
+  const arbiter = HyperlaneArbiter__factory.connect(
+    arbiterInfo.address,
+    filler,
   );
 
-  const { _targets, _data, _expiryTime, nonce, _hash, _prover } = intent;
-  const value = await ecoAdapter.fetchFee(
-    intentSource.chainId,
-    [_hash],
-    [claimantAddress],
-    _prover,
-  );
-  const tx = await ecoAdapter.fulfillHyperInstant(
-    intentSource.chainId,
-    _targets,
-    _data,
-    _expiryTime,
-    nonce,
-    claimantAddress,
-    _hash,
-    _prover,
+  const value = 0;
+  const tx = await arbiter.fill(
+    intent.claimChain,
+    intent.compact,
+    intent.intent,
+    intent.allocatorSignature,
+    intent.sponsorSignature,
     { value },
   );
 
@@ -209,7 +175,7 @@ async function fill(
 
   log.info({
     msg: "Filled Intent",
-    intent: `${solverName}-${intent._hash}`,
+    intent: `${solverName}-${intent.hash}`,
     txDetails: receipt.transactionHash,
     txHash: receipt.transactionHash,
   });

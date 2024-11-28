@@ -35,4 +35,3 @@ function createLogger(name?: string, logFormat?: LogFormat, logLevel?: Level) {
 const log = createLogger();
 
 export { createLogger, log, LogFormat, type Level, type Logger };
-
