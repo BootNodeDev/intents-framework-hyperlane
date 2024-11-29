@@ -1,7 +1,8 @@
-import { Zero } from "@ethersproject/constants";
 import { type MultiProvider } from "@hyperlane-xyz/sdk";
 import { type Result } from "@hyperlane-xyz/utils";
 
+import { BigNumber } from "@ethersproject/bignumber";
+import { HyperlaneArbiter__factory } from "../../typechain/factories/compact/contracts/HyperlaneArbiter__factory.js";
 import { Erc20__factory } from "../../typechain/factories/contracts/Erc20__factory.js";
 import type { Compact, CompactMetadata } from "./types.js";
 import {
@@ -10,7 +11,6 @@ import {
   retrieveOriginInfo,
   retrieveTargetInfo,
 } from "./utils.js";
-import { HyperlaneArbiter__factory } from "../../typechain/factories/compact/contracts/HyperlaneArbiter__factory.js";
 
 export const create = (multiProvider: MultiProvider) => {
   const { solverName } = setup();
@@ -161,7 +161,13 @@ async function fill(
     filler,
   );
 
-  const value = 0;
+  const compact = JSON.stringify(intent);
+  const apiUrl = `https://the-compact-allocator-api.vercel.app/api/quote?compact=${compact}`;
+  const response = await fetch(apiUrl);
+  const data = await response.json();
+
+  const value = BigNumber.from(data.fee).add(intent.intent.amount);
+
   const tx = await arbiter.fill(
     intent.claimChain,
     intent.compact,
