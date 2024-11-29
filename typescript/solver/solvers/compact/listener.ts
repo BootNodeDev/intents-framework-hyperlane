@@ -37,6 +37,7 @@ function poll<TResolve>(
     } = await response.json();
 
     const compacts = _compacts.map((_compact: any) => ({
+      id: _compact.id,
       hash: _compact.hash,
       claimChain: _compact.claimChain,
       compact: {
@@ -59,7 +60,10 @@ function poll<TResolve>(
       filled: _compact.filled,
     }));
 
-    compacts.forEach((compact) => handler(compact as TResolve));
+
+    for await (const compact of compacts) {
+      await handler(compact as TResolve);
+    }
 
     setTimeout(poller, interval);
   };

@@ -14,7 +14,7 @@ import {
 } from "./utils.js";
 
 export const create = (multiProvider: MultiProvider) => {
-  const { solverName } = setup();
+  const { solverName, arbiters } = setup();
 
   return async function compact(intent: Compact) {
     const origin = await retrieveOriginInfo(intent, multiProvider);
@@ -27,12 +27,7 @@ export const create = (multiProvider: MultiProvider) => {
       target: target.join(", "),
     });
 
-    const result = await prepareIntent(
-      intent,
-      adapters,
-      multiProvider,
-      solverName,
-    );
+    const result = await prepareIntent(intent, arbiters, multiProvider, solverName);
 
     if (!result.success) {
       log.error(
@@ -43,8 +38,7 @@ export const create = (multiProvider: MultiProvider) => {
 
     await fill(
       intent,
-      result.data.adapter,
-      intentSource,
+      result.data.arbiter,
       multiProvider,
       solverName,
     );
@@ -163,17 +157,15 @@ async function fill(
   });
 
   const _chainId = intent.intent.chainId;
-
+  
   const filler = multiProvider.getSigner(_chainId);
-  const arbiter = HyperlaneArbiter__factory.connect(
-    arbiterInfo.address,
-    filler,
-  );
+  const arbiter = HyperlaneArbiter__factory.connect(arbiterInfo.address, filler);
 
   const compact = JSON.stringify(intent);
-  const apiUrl = `https://the-compact-allocator-api.vercel.app/api/quote?compact=${compact}`;
+  const baseUrl = 'https://the-compact-allocator-api.vercel.app/api';
+  const apiUrl = `${baseUrl}/quote?compact=${compact}`;
   const response = await fetch(apiUrl);
-  const data = await response.json();
+  const { data } = await response.json();
 
   const value = BigNumber.from(data.fee).add(intent.intent.amount);
 
@@ -187,6 +179,8 @@ async function fill(
   );
 
   const receipt = await tx.wait();
+  const setFilledUrl = `${baseUrl}/compacts/${intent.id}/setFilled`;
+  await fetch(setFilledUrl, { method: "POST" });
 
   log.info({
     msg: "Filled Intent",

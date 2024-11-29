@@ -8,6 +8,7 @@ export type CompactMetadata = {
 };
 
 export type Compact = {
+  id: number;
   hash: string;
   claimChain: number;
   compact: {
