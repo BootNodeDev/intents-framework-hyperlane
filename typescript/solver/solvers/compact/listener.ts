@@ -31,10 +31,12 @@ function poll<TResolve>(
       throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
+    // This is reading all the non-filled compacts
     const {
-      data: { compact: _compact },
+      data: { compacts: _compacts }
     } = await response.json();
-    const compact = {
+
+    const compacts = _compacts.map((_compact: any) => ({
       hash: _compact.hash,
       claimChain: _compact.claimChain,
       compact: {
@@ -55,9 +57,9 @@ function poll<TResolve>(
       allocatorSignature: _compact.allocatorSignature,
       sponsorSignature: _compact.sponsorSignature,
       filled: _compact.filled,
-    };
+    }));
 
-    handler(compact as TResolve);
+    compacts.forEach((compact) => handler(compact as TResolve));
 
     setTimeout(poller, interval);
   };
