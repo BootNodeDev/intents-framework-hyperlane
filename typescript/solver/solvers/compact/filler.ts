@@ -2,6 +2,7 @@ import { type MultiProvider } from "@hyperlane-xyz/sdk";
 import { type Result } from "@hyperlane-xyz/utils";
 
 import { BigNumber } from "@ethersproject/bignumber";
+import { AddressZero } from "@ethersproject/constants";
 import { HyperlaneArbiter__factory } from "../../typechain/factories/compact/contracts/HyperlaneArbiter__factory.js";
 import { Erc20__factory } from "../../typechain/factories/contracts/Erc20__factory.js";
 import type { Compact, CompactMetadata } from "./types.js";
@@ -107,9 +108,14 @@ async function prepareIntent(
     const areTargetFundsAvailable = await Promise.all(
       Object.entries(requiredAmountsByTarget).map(
         async ([target, requiredAmount]) => {
-          const erc20 = Erc20__factory.connect(target, signer);
+          let balance: BigNumber;
+          if (target === AddressZero) {
+            balance = await signer.getBalance();
+          } else {
+            const erc20 = Erc20__factory.connect(target, signer);
+            balance = await erc20.balanceOf(fillerAddress);
+          }
 
-          const balance = await erc20.balanceOf(fillerAddress);
           return balance.gte(requiredAmount);
         },
       ),
@@ -125,8 +131,11 @@ async function prepareIntent(
     await Promise.all(
       Object.entries(requiredAmountsByTarget).map(
         async ([target, requiredAmount]) => {
-          const erc20 = Erc20__factory.connect(target, signer);
+          if (target === AddressZero) {
+            return;
+          }
 
+          const erc20 = Erc20__factory.connect(target, signer);
           const tx = await erc20.approve(arbiter.address, requiredAmount);
           await tx.wait();
         },
