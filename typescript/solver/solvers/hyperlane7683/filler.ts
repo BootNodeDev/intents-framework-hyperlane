@@ -15,14 +15,16 @@ import type {
 import {
   getChainIdsWithEnoughTokens,
   log,
-  metadata,
   retrieveOriginInfo,
   retrieveTargetInfo,
   settleOrder,
 } from "./utils.js";
 
+import { allowBlockLists, metadata } from "./config/index.js";
+import { chainIdsToName, isAllowedIntent } from "../../config/index.js";
+
 export const create = (multiProvider: MultiProvider) => {
-  const { originSettler, solverName } = setup();
+  const { originSettler, protocolName } = setup();
 
   return async function hyperlane7683({
     orderId,
@@ -37,7 +39,7 @@ export const create = (multiProvider: MultiProvider) => {
 
     log.info({
       msg: "Intent Indexed",
-      intent: `${solverName}-${orderId}`,
+      intent: `${protocolName}-${orderId}`,
       origin: origin.join(", "),
       target: target.join(", "),
     });
@@ -46,37 +48,31 @@ export const create = (multiProvider: MultiProvider) => {
       orderId,
       resolvedOrder,
       multiProvider,
-      solverName,
+      protocolName,
     );
 
     if (!result.success) {
       log.error(
-        `${solverName} Failed evaluating filling Intent: ${result.error}`,
+        `${protocolName} Failed evaluating filling Intent: ${result.error}`,
       );
       return;
     }
 
     const { fillInstructions, maxSpent } = result.data;
 
-    await fill(orderId, fillInstructions, maxSpent, multiProvider, solverName);
+    await fill(
+      orderId,
+      fillInstructions,
+      maxSpent,
+      multiProvider,
+      protocolName,
+    );
 
-    await settleOrder(fillInstructions, orderId, multiProvider, solverName);
+    await settleOrder(fillInstructions, orderId, multiProvider, protocolName);
   };
 };
 
 function setup() {
-  if (!metadata.solverName) {
-    metadata.solverName = "UNKNOWN_SOLVER";
-  }
-
-  if (!metadata.originSettler.chainId) {
-    throw new Error("OriginSettler chain ID must be provided");
-  }
-
-  if (!metadata.originSettler.address) {
-    throw new Error("OriginSettler address must be provided");
-  }
-
   return metadata;
 }
 
@@ -86,21 +82,36 @@ async function prepareIntent(
   orderId: string,
   resolvedOrder: ResolvedCrossChainOrder,
   multiProvider: MultiProvider,
-  solverName: string,
+  protocolName: string,
 ): Promise<Result<IntentData>> {
   log.info({
     msg: "Evaluating filling Intent",
-    intent: `${solverName}-${orderId}`,
+    intent: `${protocolName}-${orderId}`,
   });
 
   try {
+    if (
+      !resolvedOrder.maxSpent.every((maxSpent) =>
+        isAllowedIntent(allowBlockLists, {
+          senderAddress: resolvedOrder.user,
+          destinationDomain: chainIdsToName[maxSpent.chainId.toString()],
+          recipientAddress: maxSpent.recipient,
+        }),
+      )
+    ) {
+      return {
+        error: "Not allowed intent",
+        success: false,
+      };
+    }
+
     const chainIdsWithEnoughTokens = await getChainIdsWithEnoughTokens(
       resolvedOrder,
       multiProvider,
     );
 
     log.debug(
-      `${solverName} - Chain IDs with enough tokens: ${chainIdsWithEnoughTokens}`,
+      `${protocolName} - Chain IDs with enough tokens: ${chainIdsWithEnoughTokens}`,
     );
 
     const fillInstructions = resolvedOrder.fillInstructions.filter(
@@ -108,13 +119,13 @@ async function prepareIntent(
         chainIdsWithEnoughTokens.includes(destinationChainId.toString()),
     );
     log.debug(
-      `${solverName} - fillInstructions: ${JSON.stringify(fillInstructions)}`,
+      `${protocolName} - fillInstructions: ${JSON.stringify(fillInstructions)}`,
     );
 
     const maxSpent = resolvedOrder.maxSpent.filter(({ chainId }) =>
       chainIdsWithEnoughTokens.includes(chainId.toString()),
     );
-    log.debug(`${solverName} - maxSpent: ${JSON.stringify(maxSpent)}`);
+    log.debug(`${protocolName} - maxSpent: ${JSON.stringify(maxSpent)}`);
 
     return { data: { fillInstructions, maxSpent }, success: true };
   } catch (error: any) {
@@ -131,11 +142,11 @@ async function fill(
   fillInstructions: ResolvedCrossChainOrder["fillInstructions"],
   maxSpent: ResolvedCrossChainOrder["maxSpent"],
   multiProvider: MultiProvider,
-  solverName: string,
+  protocolName: string,
 ): Promise<void> {
   log.info({
     msg: "Filling Intent",
-    intent: `${solverName}-${orderId}`,
+    intent: `${protocolName}-${orderId}`,
   });
 
   await Promise.all(
@@ -156,14 +167,14 @@ async function fill(
 
       if (baseUrl) {
         log.debug(
-          `${solverName} - Approval Tx: ${baseUrl}/tx/${receipt.transactionHash}`,
+          `${protocolName} - Approval Tx: ${baseUrl}/tx/${receipt.transactionHash}`,
         );
       } else {
-        log.debug(`${solverName} - Approval Tx: ${receipt.transactionHash}`);
+        log.debug(`${protocolName} - Approval Tx: ${receipt.transactionHash}`);
       }
 
       log.debug(
-        `${solverName} - Approved ${amount.toString()} of ${token} to ${recipient} on ${_chainId}`,
+        `${protocolName} - Approved ${amount.toString()} of ${token} to ${recipient} on ${_chainId}`,
       );
     }),
   );
@@ -200,7 +211,7 @@ async function fill(
 
         log.info({
           msg: "Filled Intent",
-          intent: `${solverName}-${orderId}`,
+          intent: `${protocolName}-${orderId}`,
           txDetails: txInfo,
           txHash: receipt.transactionHash,
         });

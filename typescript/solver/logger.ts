@@ -4,7 +4,7 @@ import { pino, type Level, type Logger } from "pino";
 import pretty, { type PrettyOptions } from "pino-pretty";
 import uniqolor from "uniqolor";
 
-import { LOG_FORMAT, LOG_LEVEL } from "./config.js";
+import { LOG_FORMAT, LOG_LEVEL } from "./config/index.js";
 
 const prettyConfig: PrettyOptions = {
   ignore: "hostname,pid,level",

@@ -1,17 +1,9 @@
-import fs from "node:fs";
-
 import { chainMetadata } from "@hyperlane-xyz/registry";
 import { MultiProvider } from "@hyperlane-xyz/sdk";
 import { ensure0x } from "@hyperlane-xyz/utils";
-import { parse } from "yaml";
 
-import { MNEMONIC, PRIVATE_KEY } from "../config.js";
+import { MNEMONIC, PRIVATE_KEY } from "../config/index.js";
 import { NonceKeeperWallet } from "../NonceKeeperWallet.js";
-
-export function getMetadata<TMetadata>(dirname: string): TMetadata {
-  const data = fs.readFileSync(`${dirname}/metadata.yaml`, "utf8");
-  return parse(data);
-}
 
 export function getMultiProvider() {
   if (!PRIVATE_KEY && !MNEMONIC) {

@@ -9,15 +9,13 @@ import type { Provider } from "@ethersproject/abstract-provider";
 import { bytes32ToAddress } from "@hyperlane-xyz/utils";
 import { createLogger } from "../../logger.js";
 import { Hyperlane7683__factory } from "../../typechain/factories/hyperlane7683/contracts/Hyperlane7683__factory.js";
-import { getMetadata } from "../utils.js";
 import type {
   Hyperlane7683Metadata,
   ResolvedCrossChainOrder,
 } from "./types.js";
+import { metadata } from "./config/index.js";
 
-export const metadata = getMetadata<Hyperlane7683Metadata>(import.meta.dirname);
-
-export const log = createLogger(metadata.solverName);
+export const log = createLogger(metadata.protocolName);
 
 export async function checkChainTokens(
   multiProvider: MultiProvider,

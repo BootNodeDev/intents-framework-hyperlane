@@ -6,8 +6,8 @@ import type {
 } from "../../typechain/hyperlane7683/contracts/Hyperlane7683.js";
 import { BaseListener } from "../BaseListener.js";
 import { OpenEventArgs } from "./types.js";
-
-import { log, metadata } from "./utils.js";
+import { metadata } from "./config/index.js";
+import { log } from "./utils.js";
 
 export class Hyperlane7683Listener extends BaseListener<
   Hyperlane7683,
@@ -16,10 +16,10 @@ export class Hyperlane7683Listener extends BaseListener<
 > {
   constructor() {
     const {
-      originSettler: { address, chainId },
-      solverName,
+      originSettler: { address, chainName },
+      protocolName,
     } = metadata;
-    const hyperlane7683Metadata = { address, chainId, solverName };
+    const hyperlane7683Metadata = { address, chainName, protocolName };
 
     super(Hyperlane7683__factory, "Open", hyperlane7683Metadata, log);
   }
