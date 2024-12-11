@@ -1,4 +1,9 @@
 import type { Compact } from "./types.js";
+import { allowBlockLists, COMPACT_API_KEY } from "./config/index.js";
+import {
+  chainIdsToName,
+  isAllowedIntent,
+} from "../../config/index.js";
 
 export const create = () => {
   return function (handler: (args: Compact) => void) {
@@ -25,7 +30,8 @@ function poll<TResolve>(
 
   const poller = async () => {
     console.log("Polling...");
-    const response = await fetch(url);
+    if (!COMPACT_API_KEY) throw new Error("COMPACT_API_KEY is not set");
+    const response = await fetch(url, {method: "GET", headers: {"X-API-KEY": COMPACT_API_KEY}});
 
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}`);
@@ -33,33 +39,17 @@ function poll<TResolve>(
 
     // This is reading all the non-filled compacts
     const {
-      data: { compacts: _compacts }
-    } = await response.json();
+      data: { compacts }
+    } = await response.json() as { data: { compacts: Compact[] } };
 
-    const compacts = _compacts.map((_compact: any) => ({
-      id: _compact.id,
-      hash: _compact.hash,
-      claimChain: _compact.claimChain,
-      compact: {
-        arbiter: _compact.compact_arbiter,
-        sponsor: _compact.compact_sponsor,
-        nonce: _compact.compact_nonce,
-        expires: _compact.compact_expires,
-        id: _compact.compact_id,
-        amount: _compact.compact_amount,
-      },
-      intent: {
-        token: _compact.intent_token,
-        amount: _compact.intent_amount,
-        fee: _compact.intent_fee,
-        chainId: _compact.intent_chainId,
-        recipient: _compact.intent_recipient,
-      },
-      allocatorSignature: _compact.allocatorSignature,
-      sponsorSignature: _compact.sponsorSignature,
-      filled: _compact.filled,
-    }));
-
+    // This is filtering the compacts to only include the ones that are allowed
+    compacts.filter((compact: Compact) =>
+      isAllowedIntent(allowBlockLists, {
+        senderAddress: compact.compact.sponsor,
+        destinationDomain: chainIdsToName[compact.intent.chainId.toString()],
+        recipientAddress: compact.intent.recipient,
+      })
+    );
 
     for await (const compact of compacts) {
       await handler(compact as TResolve);

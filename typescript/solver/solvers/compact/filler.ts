@@ -8,13 +8,16 @@ import { Erc20__factory } from "../../typechain/factories/contracts/Erc20__facto
 import type { Compact, CompactMetadata } from "./types.js";
 import {
   log,
-  metadata,
   retrieveOriginInfo,
   retrieveTargetInfo,
 } from "./utils.js";
+import {
+  chainIds
+} from "../../config/index.js";
+import { metadata , COMPACT_API_KEY } from "./config/index.js";
 
 export const create = (multiProvider: MultiProvider) => {
-  const { solverName, arbiters } = setup();
+  const { protocolName, arbiters } = setup();
 
   return async function compact(intent: Compact) {
     const origin = await retrieveOriginInfo(intent, multiProvider);
@@ -22,16 +25,16 @@ export const create = (multiProvider: MultiProvider) => {
 
     log.info({
       msg: "Intent Indexed",
-      intent: `${solverName}-${intent.hash}`,
+      intent: `${protocolName}-${intent.hash}`,
       origin: origin.join(", "),
       target: target.join(", "),
     });
 
-    const result = await prepareIntent(intent, arbiters, multiProvider, solverName);
+    const result = await prepareIntent(intent, arbiters, multiProvider, protocolName);
 
     if (!result.success) {
       log.error(
-        `${solverName} Failed evaluating filling Intent: ${result.error}`,
+        `${protocolName} Failed evaluating filling Intent: ${result.error}`,
       );
       return;
     }
@@ -40,27 +43,14 @@ export const create = (multiProvider: MultiProvider) => {
       intent,
       result.data.arbiter,
       multiProvider,
-      solverName,
+      protocolName,
     );
 
-    // await withdrawRewards(intent, intentSource, multiProvider, solverName);
+    // await withdrawRewards(intent, intentSource, multiProvider, protocolName);
   };
 };
 
 function setup() {
-  if (!metadata.solverName) {
-    metadata.solverName = "UNKNOWN_SOLVER";
-  }
-
-  if (
-    !metadata.arbiters.every(
-      ({ address, chainId, chainName }) =>
-        !!address && !!chainId && !!chainName,
-    )
-  ) {
-    throw new Error("Arbiter address must be provided");
-  }
-
   return metadata;
 }
 
@@ -70,17 +60,19 @@ async function prepareIntent(
   intent: Compact,
   arbiters: CompactMetadata["arbiters"],
   multiProvider: MultiProvider,
-  solverName: string,
-): Promise<Result<IntentData>> {
+  protocolName: string,
+): Promise<Result<{
+  arbiter: CompactMetadata["arbiters"][number];
+}>> {
   log.info({
     msg: "Evaluating filling Intent",
-    intent: `${solverName}-${intent.hash}`,
+    intent: `${protocolName}-${intent.hash}`,
   });
 
   try {
     const destinationChainId = intent.intent.chainId;
     const arbiter = arbiters.find(
-      ({ chainId }) => chainId === destinationChainId,
+      ({ chainName }) => chainIds[chainName] === destinationChainId,
     );
 
     if (!arbiter) {
@@ -120,7 +112,7 @@ async function prepareIntent(
     }
 
     log.debug(
-      `${solverName} - Approving tokens: ${intent.hash}, for ${arbiter.address}`,
+      `${protocolName} - Approving tokens: ${intent.hash}, for ${arbiter.address}`,
     );
     await Promise.all(
       Object.entries(requiredAmountsByTarget).map(
@@ -149,23 +141,25 @@ async function fill(
   intent: Compact,
   arbiterInfo: CompactMetadata["arbiters"][number],
   multiProvider: MultiProvider,
-  solverName: string,
+  protocolName: string,
 ): Promise<void> {
   log.info({
     msg: "Filling Intent",
-    intent: `${solverName}-${intent.hash}`,
+    intent: `${protocolName}-${intent.hash}`,
   });
 
   const _chainId = intent.intent.chainId;
-  
+
   const filler = multiProvider.getSigner(_chainId);
   const arbiter = HyperlaneArbiter__factory.connect(arbiterInfo.address, filler);
+
+  if (!COMPACT_API_KEY) throw new Error("COMPACT_API_KEY is not set");
 
   const compact = JSON.stringify(intent);
   const baseUrl = 'https://the-compact-allocator-api.vercel.app/api';
   const apiUrl = `${baseUrl}/quote?compact=${compact}`;
-  const response = await fetch(apiUrl);
-  const { data } = await response.json();
+  const response = await fetch(apiUrl, {method: "GET", headers: {"X-API-KEY": COMPACT_API_KEY}});
+  const { data } = await response.json() as any;
 
   const value = BigNumber.from(data.fee).add(intent.intent.amount);
 
@@ -180,11 +174,11 @@ async function fill(
 
   const receipt = await tx.wait();
   const setFilledUrl = `${baseUrl}/compacts/${intent.id}/setFilled`;
-  await fetch(setFilledUrl, { method: "POST" });
+  await fetch(setFilledUrl, { method: "POST", headers: {"X-API-KEY": COMPACT_API_KEY} });
 
   log.info({
     msg: "Filled Intent",
-    intent: `${solverName}-${intent.hash}`,
+    intent: `${protocolName}-${intent.hash}`,
     txDetails: receipt.transactionHash,
     txHash: receipt.transactionHash,
   });

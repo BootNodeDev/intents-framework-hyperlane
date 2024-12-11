@@ -8,13 +8,12 @@ import {
   TheCompact__factory,
 } from "../../typechain/factories/compact/contracts/index.js";
 import { Erc20__factory } from "../../typechain/factories/contracts/Erc20__factory.js";
+import { metadata } from "./config/index.js";
+import { chainIds } from "../../config/index.js";
 
-import { getMetadata } from "../utils.js";
-import type { Compact, CompactMetadata } from "./types.js";
+import type { Compact } from "./types.js";
 
-export const metadata = getMetadata<CompactMetadata>(import.meta.dirname);
-
-export const log = createLogger(metadata.solverName);
+export const log = createLogger(metadata.protocolName);
 
 export async function retrieveOriginInfo(
   intent: Compact,
@@ -22,7 +21,7 @@ export async function retrieveOriginInfo(
 ): Promise<Array<string>> {
   const provider = multiProvider.getProvider(intent.claimChain);
   const arbiterData = metadata.arbiters.find(
-    (a) => a.chainId == intent.claimChain,
+    (a) => chainIds[a.chainName] == intent.claimChain,
   )!;
   const arbiter = HyperlaneArbiter__factory.connect(
     arbiterData.address,
@@ -53,7 +52,7 @@ export async function retrieveTargetInfo(
   multiProvider: MultiProvider,
 ): Promise<Array<string>> {
   const arbiterData = metadata.arbiters.find(
-    (a) => a.chainId == intent.intent.chainId,
+    (a) => chainIds[a.chainName] == intent.intent.chainId,
   )!;
   const provider = multiProvider.getProvider(intent.intent.chainId);
   const erc20 = Erc20__factory.connect(intent.intent.token, provider);
