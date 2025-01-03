@@ -50,7 +50,7 @@
   bnb_smart_chain = "https://bsc-dataseed.binance.org"
   gnosis_chain = "https://rpc.gnosischain.com"
   localhost = "http://localhost:8545"
-  optimism = "https://optimism-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
+  optimism = "https://opt-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   polygon = "https://polygon-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   optimism-sepolia = "https://opt-sepolia.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   arbitrum-sepolia = "https://arb-sepolia.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
