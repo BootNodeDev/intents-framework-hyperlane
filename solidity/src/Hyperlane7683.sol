@@ -3,11 +3,11 @@ pragma solidity 0.8.25;
 
 import { GasRouter } from "@hyperlane-xyz/client/GasRouter.sol";
 
-import { Base7683 } from "./Base7683.sol";
-import { OrderData, OrderEncoder } from "./libs/OrderEncoder.sol";
-import { Router7683Message} from "./libs/Route7683Message.sol";
+import { Hyperlane7683Message } from "./libs/Hyperlane7683Message.sol";
 
-contract Hyperlane7683 is GasRouter, Base7683 {
+import { BasicSwap7683 } from "./BasicSwap7683.sol";
+
+contract Hyperlane7683 is GasRouter, BasicSwap7683 {
     // ============ Libraries ============
 
     // ============ Constants ============
@@ -22,13 +22,11 @@ contract Hyperlane7683 is GasRouter, Base7683 {
 
     // ============ Errors ============
 
-    error InvalidOrderOrigin();
-
     // ============ Modifiers ============
 
     // ============ Constructor ============
 
-    constructor(address _mailbox, address _permit2) GasRouter(_mailbox) Base7683(_permit2) { }
+    constructor(address _mailbox, address _permit2) GasRouter(_mailbox) BasicSwap7683(_permit2) { }
 
     // ============ Initializers ============
 
@@ -42,36 +40,38 @@ contract Hyperlane7683 is GasRouter, Base7683 {
         _MailboxClient_initialize(_customHook, _interchainSecurityModule, _owner);
     }
 
+    // ============ External Functions ============
+
     // ============ Internal Functions ============
 
-    function _handle(uint32 _origin, bytes32, bytes calldata _message) internal virtual override {
-        (bool _settle, bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) = Router7683Message.decode(_message);
+    function _dispatchSettle(
+        uint32 _originDomain,
+        bytes32[] memory _orderIds,
+        bytes[] memory _ordersFillerData
+    )
+        internal
+        override
+    {
+        _GasRouter_dispatch(
+            _originDomain, msg.value, Hyperlane7683Message.encodeSettle(_orderIds, _ordersFillerData), address(hook)
+        );
+    }
 
-        for (uint i = 0; i < _orderIds.length; i++) {
-            // check if the order is opened to ensure it belongs to this domain, skip otherwise
-            if (orderStatus[_orderIds[i]] != OrderStatus.OPENED) continue;
+    function _dispatchRefund(uint32 _originDomain, bytes32[] memory _orderIds) internal override {
+        _GasRouter_dispatch(_originDomain, msg.value, Hyperlane7683Message.encodeRefund(_orderIds), address(hook));
+    }
 
+    function _handle(uint32, bytes32, bytes calldata _message) internal virtual override {
+        (bool _settle, bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) =
+            Hyperlane7683Message.decode(_message);
+
+        for (uint256 i = 0; i < _orderIds.length; i++) {
             if (_settle) {
-                _settleOrder(_orderIds[i], abi.decode(_ordersFillerData[i], (bytes32)), _origin);
+                _handleSettleOrder(_orderIds[i], abi.decode(_ordersFillerData[i], (bytes32)));
             } else {
-                _refundOrder(_orderIds[i], _origin);
-
+                _handleRefundOrder(_orderIds[i]);
             }
         }
-    }
-
-    function _handleSettlement(bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) internal virtual override {
-        uint32 originDomain = orders[_orderIds[0]].originDomain;
-        _GasRouter_dispatch(originDomain, msg.value, Router7683Message.encodeSettle(_orderIds, _ordersFillerData), address(hook));
-    }
-
-    function _handleRefund(bytes32[] memory _orderIds) internal virtual override {
-        uint32 originDomain = orders[_orderIds[0]].originDomain;
-        _GasRouter_dispatch(originDomain, msg.value, Router7683Message.encodeRefund(_orderIds), address(hook));
-    }
-
-    function _mustHaveRemoteCounterpart(uint32 _domain) internal view virtual override returns (bytes32) {
-        return _mustHaveRemoteRouter(_domain);
     }
 
     function _localDomain() internal view override returns (uint32) {

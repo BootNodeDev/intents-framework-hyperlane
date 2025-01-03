@@ -4,8 +4,7 @@ pragma solidity ^0.8.25;
 import { Test, Vm } from "forge-std/Test.sol";
 import { console2 } from "forge-std/console2.sol";
 
-import { TransparentUpgradeableProxy } from
-"@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import { TransparentUpgradeableProxy } from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
@@ -17,7 +16,7 @@ import { IInterchainSecurityModule } from "@hyperlane-xyz/interfaces/IInterchain
 import { IPostDispatchHook } from "@hyperlane-xyz/interfaces/hooks/IPostDispatchHook.sol";
 import { TestIsm } from "@hyperlane-xyz/test/TestIsm.sol";
 import { InterchainGasPaymaster } from "@hyperlane-xyz/hooks/igp/InterchainGasPaymaster.sol";
-import {DeployPermit2} from "@uniswap/permit2/test/utils/DeployPermit2.sol";
+import { DeployPermit2 } from "@uniswap/permit2/test/utils/DeployPermit2.sol";
 
 import { Hyperlane7683 } from "../src/Hyperlane7683.sol";
 
@@ -29,15 +28,18 @@ import {
     FillInstruction
 } from "../src/ERC7683/IERC7683.sol";
 import { OrderData, OrderEncoder } from "../src/libs/OrderEncoder.sol";
-import { Base7683 } from "../src/Base7683.sol";
 
 event Open(bytes32 indexed orderId, ResolvedCrossChainOrder resolvedOrder);
-event Filled(bytes32 orderId, bytes originData, bytes fillerData);
-event Settle(bytes32[] orderIds, bytes[] ordersFillerData);
-event Refund(bytes32[] orderIds);
-event Settled(bytes32 orderId, address receiver);
-event Refunded(bytes32 orderId, address receiver);
 
+event Filled(bytes32 orderId, bytes originData, bytes fillerData);
+
+event Settle(bytes32[] orderIds, bytes[] ordersFillerData);
+
+event Refund(bytes32[] orderIds);
+
+event Settled(bytes32 orderId, address receiver);
+
+event Refunded(bytes32 orderId, address receiver);
 
 contract TestInterchainGasPaymaster is InterchainGasPaymaster {
     uint256 public gasPrice = 10;
@@ -60,10 +62,10 @@ contract TestInterchainGasPaymaster is InterchainGasPaymaster {
 }
 
 contract Hyperlane7683ForTest is Hyperlane7683 {
-    constructor(address _mailbox, address permitt2) Hyperlane7683(_mailbox, permitt2) {}
+    constructor(address _mailbox, address permitt2) Hyperlane7683(_mailbox, permitt2) { }
 
     function get7383LocalDomain() public view returns (uint32) {
-      return _localDomain();
+        return _localDomain();
     }
 }
 
@@ -111,24 +113,13 @@ contract Hyperlane7683BaseTest is Test, DeployPermit2 {
 
     mapping(address => uint256) internal balanceId;
 
-    function deployProxiedRouter(
-        MockMailbox _mailbox,
-        address _owner
-    )
-        public
-        returns (Hyperlane7683ForTest)
-    {
+    function deployProxiedRouter(MockMailbox _mailbox, address _owner) public returns (Hyperlane7683ForTest) {
         Hyperlane7683ForTest implementation = new Hyperlane7683ForTest(address(_mailbox), permit2);
 
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(implementation),
             admin,
-            abi.encodeWithSelector(
-                Hyperlane7683.initialize.selector,
-                address(0),
-                address(0),
-                _owner
-            )
+            abi.encodeWithSelector(Hyperlane7683.initialize.selector, address(0), address(0), _owner)
         );
 
         return Hyperlane7683ForTest(address(proxy));
@@ -145,15 +136,9 @@ contract Hyperlane7683BaseTest is Test, DeployPermit2 {
 
         testIsm = new TestIsm();
 
-        originRouter = deployProxiedRouter(
-            environment.mailboxes(origin),
-            owner
-        );
+        originRouter = deployProxiedRouter(environment.mailboxes(origin), owner);
 
-        destinationRouter = deployProxiedRouter(
-            environment.mailboxes(destination),
-            owner
-        );
+        destinationRouter = deployProxiedRouter(environment.mailboxes(destination), owner);
 
         environment.mailboxes(origin).setDefaultHook(address(igp));
         environment.mailboxes(destination).setDefaultHook(address(igp));
@@ -208,7 +193,6 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
         assertEq(destinationRouter.get7383LocalDomain(), destination);
     }
 
-
     function testFuzz_enrollRemoteRouters(uint8 count, uint32 domain, bytes32 router) public {
         vm.assume(count > 0 && count < uint256(router) && count < domain);
 
@@ -252,9 +236,10 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
             outputToken: TypeCasts.addressToBytes32(address(outputToken)),
             amountIn: amount,
             amountOut: amount,
-            senderNonce: originRouter.senderNonce(kakaroto),
+            senderNonce: 1,
             originDomain: origin,
             destinationDomain: destination,
+            destinationSettler: destinationRouterB32,
             fillDeadline: uint32(block.timestamp + 100),
             data: new bytes(0)
         });
@@ -343,7 +328,7 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
         vm.deal(vegeta, gasPaymentQuote);
         uint256 balanceBefore = address(vegeta).balance;
 
-        destinationRouter.settle{value: gasPaymentQuote}(orderIds);
+        destinationRouter.settle{ value: gasPaymentQuote }(orderIds);
 
         vm.expectEmit(false, false, false, true, address(originRouter));
         emit Settled(orderId, vegeta);
@@ -352,10 +337,12 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
 
         uint256[] memory balancesAfter = balances(inputToken);
 
-        assertTrue(originRouter.orderStatus(orderId) == Base7683.OrderStatus.SETTLED);
-        assertTrue(destinationRouter.orderStatus(orderId) == Base7683.OrderStatus.SETTLED);
+        assertTrue(originRouter.orderStatus(orderId) == originRouter.SETTLED());
+        assertTrue(destinationRouter.orderStatus(orderId) == destinationRouter.FILLED());
 
-        assertEq(balancesBefore[balanceId[address(originRouter)]] - amount, balancesAfter[balanceId[address(originRouter)]]);
+        assertEq(
+            balancesBefore[balanceId[address(originRouter)]] - amount, balancesAfter[balanceId[address(originRouter)]]
+        );
         assertEq(balancesBefore[balanceId[vegeta]] + amount, balancesAfter[balanceId[vegeta]]);
 
         uint256 balanceAfter = address(vegeta).balance;
@@ -364,7 +351,9 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
         vm.stopPrank();
     }
 
-    function test_refund_work() public enrollRouters {
+    // TODO tests settle reverts
+
+    function test_refund_onchain_work() public enrollRouters {
         OrderData memory orderData = prepareOrderData();
         OnchainCrossChainOrder memory order =
             prepareOnchainOrder(orderData, orderData.fillDeadline, OrderEncoder.orderDataType());
@@ -385,6 +374,9 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
         bytes32[] memory orderIds = new bytes32[](1);
         orderIds[0] = orderId;
 
+        OnchainCrossChainOrder[] memory orders = new OnchainCrossChainOrder[](1);
+        orders[0] = order;
+
         uint256[] memory balancesBefore = balances(inputToken);
 
         vm.expectEmit(false, false, false, true, address(destinationRouter));
@@ -393,7 +385,7 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
         vm.deal(kakaroto, gasPaymentQuote);
         uint256 balanceBefore = address(kakaroto).balance;
 
-        destinationRouter.refund{value: gasPaymentQuote}(ordersData);
+        destinationRouter.refund{ value: gasPaymentQuote }(orders);
 
         vm.expectEmit(false, false, false, true, address(originRouter));
         emit Refunded(orderId, kakaroto);
@@ -402,10 +394,12 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
 
         uint256[] memory balancesAfter = balances(inputToken);
 
-        assertTrue(originRouter.orderStatus(orderId) == Base7683.OrderStatus.REFUNDED);
-        assertTrue(destinationRouter.orderStatus(orderId) == Base7683.OrderStatus.REFUNDED);
+        assertTrue(originRouter.orderStatus(orderId) == originRouter.REFUNDED());
+        assertTrue(destinationRouter.orderStatus(orderId) == destinationRouter.UNKNOWN());
 
-        assertEq(balancesBefore[balanceId[address(originRouter)]] - amount, balancesAfter[balanceId[address(originRouter)]]);
+        assertEq(
+            balancesBefore[balanceId[address(originRouter)]] - amount, balancesAfter[balanceId[address(originRouter)]]
+        );
         assertEq(balancesBefore[balanceId[kakaroto]] + amount, balancesAfter[balanceId[kakaroto]]);
 
         uint256 balanceAfter = address(kakaroto).balance;
@@ -413,4 +407,11 @@ contract Hyperlane7683Test is Hyperlane7683BaseTest {
 
         vm.stopPrank();
     }
+
+    // TODO test_refund_gasless_work
+    // TODO tests refund reverts
+
+    // TODO test_resolve_onchain
+
+    // TODO test_resolve_gassless
 }

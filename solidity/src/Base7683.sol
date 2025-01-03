@@ -1,8 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.25;
 
+import { console2 } from "forge-std/console2.sol";
+
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+
 import { TypeCasts } from "@hyperlane-xyz/libs/TypeCasts.sol";
 import { IPermit2, ISignatureTransfer } from "@uniswap/permit2/src/interfaces/IPermit2.sol";
 
@@ -10,12 +14,9 @@ import {
     GaslessCrossChainOrder,
     OnchainCrossChainOrder,
     ResolvedCrossChainOrder,
-    Output,
-    FillInstruction,
     IOriginSettler,
     IDestinationSettler
 } from "./ERC7683/IERC7683.sol";
-import { OrderData, OrderEncoder } from "./libs/OrderEncoder.sol";
 
 abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     // ============ Libraries ============
@@ -23,32 +24,35 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
 
     // ============ Constants ============
 
-    enum OrderStatus {
-        UNFILLED,
-        OPENED,
-        FILLED,
-        SETTLED,
-        REFUNDED
-    }
-
     IPermit2 public immutable PERMIT2;
 
-    bytes32 public constant GASLESS_CROSS_CHAIN_ORDER_TYPEHASH = keccak256(
-        "GaslessCrossChainOrder(address originSettler,address user,uint256 nonce,uint64 originChainId,uint32 openDeadline,uint32 fillDeadline,bytes32 orderDataType,bytes orderData)"
+    bytes32 public constant RESOLVED_CROSS_CHAIN_ORDER_TYPEHASH = keccak256(
+        "ResolvedCrossChainOrder(address user, uint64 originChainId, uint32 openDeadline, uint32 fillDeadline, Output[] maxSpent, Output[] minReceived, FillInstruction[] fillInstructions)Output(bytes32 token, uint256 amount, bytes32 recipient, uint64 chainId)FillInstruction(uint64 destinationChainId, bytes32 destinationSettler, bytes originData)"
     );
 
     string public constant witnessTypeString =
-        "GaslessCrossChainOrder witness)GaslessCrossChainOrder(address originSettler,address user,uint256 nonce,uint64 originChainId,uint32 openDeadline,uint32 fillDeadline,bytes32 orderDataType,bytes orderData)TokenPermissions(address token,uint256 amount)";
+        "ResolvedCrossChainOrder witness)ResolvedCrossChainOrder(address user, uint64 originChainId, uint32 openDeadline, uint32 fillDeadline, Output[] maxSpent, Output[] minReceived, FillInstruction[] fillInstructions)Output(bytes32 token, uint256 amount, bytes32 recipient, uint64 chainId)FillInstruction(uint64 destinationChainId, bytes32 destinationSettler, bytes originData)TokenPermissions(address token,uint256 amount)";
+
+    // to be used to check the status of the order on orderStatus mapping. Other possible statuses should be defined in
+    // the inheriting contract
+    bytes32 public constant UNKNOWN = "";
+    bytes32 public constant OPENED = "OPENED";
+    bytes32 public constant FILLED = "FILLED";
 
     // ============ Public Storage ============
 
-    mapping(address sender => uint256 nonce) public senderNonce;
+    struct FilledOrder {
+        bytes originData;
+        bytes fillerData;
+    }
 
-    mapping(bytes32 orderId => OrderData orderData) public orders;
+    mapping(address => mapping(uint256 => uint256)) public nonceBitmap;
 
-    mapping(bytes32 orderId => bytes fillerData) public orderFillerData;
+    mapping(bytes32 orderId => bytes resolvedOrder) public orders;
 
-    mapping(bytes32 orderId => OrderStatus status) public orderStatus;
+    mapping(bytes32 orderId => FilledOrder filledOrder) public filledOrders;
+
+    mapping(bytes32 orderId => bytes32 status) public orderStatus;
 
     // ============ Upgrade Gap ============
 
@@ -59,23 +63,22 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     event Filled(bytes32 orderId, bytes originData, bytes fillerData);
     event Settle(bytes32[] orderIds, bytes[] ordersFillerData);
     event Refund(bytes32[] orderIds);
-    event Settled(bytes32 orderId, address receiver);
-    event Refunded(bytes32 orderId, address receiver);
+
+    /**
+     * @notice Emits an event when the owner successfully invalidates an unordered nonce.
+     */
+    event NonceInvalidation(address indexed owner, uint256 nonce);
 
     // ============ Errors ============
 
     error OrderOpenExpired();
-    error InvalidOrderType(bytes32 orderType);
-    error InvalidSenderNonc();
-    error InvalidOriginDomain(uint32 originDomain);
-    error InvalidOrderId();
-    error OrderFillExpired();
-    error InvalidOrderDomain();
     error InvalidOrderStatus();
-    error InvalidSenderNonce();
+    error InvalidGaslessOrderSettler();
+    error InvalidGaslessOrderOrigin();
+    error InvalidNonce();
+    error InvalidOrderOrigin();
     error OrderFillNotExpired();
-    error InvalidDomain();
-    error InvalidSender();
+    error InvalidNativeAmount();
 
     // ============ Constructor ============
 
@@ -99,19 +102,19 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
         bytes calldata
     )
         external
+        virtual
     {
         if (block.timestamp > order.openDeadline) revert OrderOpenExpired();
+        if (order.originSettler != address(this)) revert InvalidGaslessOrderSettler();
+        if (order.originChainId != _localDomain()) revert InvalidGaslessOrderOrigin();
 
-        (ResolvedCrossChainOrder memory resolvedOrder, OrderData memory orderData) =
-            _resolvedOrder(order.orderDataType, order.user, order.orderData, order.openDeadline, order.fillDeadline);
+        (ResolvedCrossChainOrder memory resolvedOrder, bytes32 orderId, uint256 nonce) = _resolveOrder(order);
 
-        bytes32 orderId = _getOrderId(orderData);
+        orders[orderId] = abi.encode(resolvedOrder);
+        orderStatus[orderId] = OPENED;
+        _useNonce(order.user, nonce);
 
-        orders[orderId] = orderData;
-        orderStatus[orderId] = OrderStatus.OPENED;
-        senderNonce[order.user] += 1;
-
-        _permitTransferFrom(order, signature, address(this));
+        _permitTransferFrom(resolvedOrder, signature, order.nonce, address(this));
 
         emit Open(orderId, resolvedOrder);
     }
@@ -120,24 +123,25 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     /// @dev To be called by the user
     /// @dev This method must emit the Open event
     /// @param order The OnchainCrossChainOrder definition
-    function open(OnchainCrossChainOrder calldata order) external {
-        (ResolvedCrossChainOrder memory resolvedOrder, OrderData memory orderData) = _resolvedOrder(
-            order.orderDataType,
-            msg.sender,
-            order.orderData,
-            type(uint32).max, // there is no open deadline for onchain orders since the user is opening it the order
-            order.fillDeadline
-        );
+    // TODO - add support for native token
+    function open(OnchainCrossChainOrder calldata order) external payable virtual {
+        (ResolvedCrossChainOrder memory resolvedOrder, bytes32 orderId, uint256 nonce) = _resolveOrder(order);
 
-        bytes32 orderId = _getOrderId(orderData);
+        orders[orderId] = abi.encode(resolvedOrder);
+        orderStatus[orderId] = OPENED;
+        _useNonce(msg.sender, nonce);
 
-        orders[orderId] = orderData;
-        orderStatus[orderId] = OrderStatus.OPENED;
-        senderNonce[msg.sender] += 1;
+        uint256 totalValue;
+        for (uint256 i = 0; i < resolvedOrder.minReceived.length; i++) {
+            address token = TypeCasts.bytes32ToAddress(resolvedOrder.minReceived[i].token);
+            if (token == address(0)) {
+                totalValue += resolvedOrder.minReceived[i].amount;
+            } else {
+                IERC20(token).safeTransferFrom(msg.sender, address(this), resolvedOrder.minReceived[i].amount);
+            }
+        }
 
-        IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransferFrom(
-            msg.sender, address(this), orderData.amountIn
-        );
+        if (msg.value != totalValue) revert InvalidNativeAmount();
 
         emit Open(orderId, resolvedOrder);
     }
@@ -153,10 +157,10 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     )
         public
         view
+        virtual
         returns (ResolvedCrossChainOrder memory resolvedOrder)
     {
-        (resolvedOrder,) =
-            _resolvedOrder(order.orderDataType, order.user, order.orderData, order.openDeadline, order.fillDeadline);
+        (resolvedOrder,,) = _resolveOrder(order);
     }
 
     /// @notice Resolves a specific OnchainCrossChainOrder into a generic ResolvedCrossChainOrder
@@ -166,15 +170,10 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     function resolve(OnchainCrossChainOrder calldata order)
         public
         view
+        virtual
         returns (ResolvedCrossChainOrder memory resolvedOrder)
     {
-        (resolvedOrder,) = _resolvedOrder(
-            order.orderDataType,
-            msg.sender,
-            order.orderData,
-            type(uint32).max, // there is no open deadline for onchain orders since the user is opening it the order
-            order.fillDeadline
-        );
+        (resolvedOrder,,) = _resolveOrder(order);
     }
 
     /// @notice Fills a single leg of a particular order on the destination chain
@@ -182,235 +181,211 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     /// @param _originData Data emitted on the origin to parameterize the fill
     /// @param _fillerData Data provided by the filler to inform the fill or express their preferences. It should
     /// contain the bytes32 encoded address of the receiver which is the used at settlement time
-    function fill(bytes32 _orderId, bytes calldata _originData, bytes calldata _fillerData) external virtual {
-        OrderData memory orderData = OrderEncoder.decode(_originData);
+    // TODO - add support for native token
+    function fill(bytes32 _orderId, bytes calldata _originData, bytes calldata _fillerData) external payable virtual {
+        if (orderStatus[_orderId] != UNKNOWN) revert InvalidOrderStatus();
 
-        if (_orderId != _getOrderId(orderData)) revert InvalidOrderId();
-        if (block.timestamp > orderData.fillDeadline) revert OrderFillExpired();
-        if (orderData.destinationDomain != _localDomain()) revert InvalidOrderDomain();
-        _mustHaveRemoteCounterpart(orderData.originDomain);
-        if (orderStatus[_orderId] != OrderStatus.UNFILLED) revert InvalidOrderStatus();
+        _fillOrder(_orderId, _originData, _fillerData);
 
-        orders[_orderId] = orderData;
-        orderStatus[_orderId] = OrderStatus.FILLED;
-        orderFillerData[_orderId] = _fillerData;
+        orderStatus[_orderId] = FILLED;
+        // TODO - unify _originData and _fillerData into a single struct
+        filledOrders[_orderId] = FilledOrder(_originData, _fillerData);
 
         emit Filled(_orderId, _originData, _fillerData);
-
-        IERC20(TypeCasts.bytes32ToAddress(orderData.outputToken)).safeTransferFrom(
-            msg.sender, TypeCasts.bytes32ToAddress(orderData.recipient), orderData.amountOut
-        );
     }
 
     function settle(bytes32[] calldata _orderIds) external payable {
+        bytes[] memory ordersOriginData = new bytes[](_orderIds.length);
         bytes[] memory ordersFillerData = new bytes[](_orderIds.length);
         for (uint256 i = 0; i < _orderIds.length; i += 1) {
-            if (orderStatus[_orderIds[i]] != OrderStatus.FILLED) revert InvalidOrderStatus();
+            // all orders must be FILLED
+            if (orderStatus[_orderIds[i]] != FILLED) revert InvalidOrderStatus();
 
-            // not necessary to check the localDomain and counterpart since the fill function already did it
-
-            orderStatus[_orderIds[i]] = OrderStatus.SETTLED;
-            ordersFillerData[i] = orderFillerData[_orderIds[i]];
+            // It may be good idea not to change the status here (on destination) but only on the origin.
+            // If the filler fills the order and settles it before it is opened on the origin, there should be a way for
+            // the filler to retry settling the order. Another scenario is some of the orders are not from the same
+            // origin domain as the first one which may be used to handle the settlement of the complete batch.
+            // Is caller responsibility to ensure the order hasn't been settled on origin yet
+            ordersOriginData[i] = filledOrders[_orderIds[i]].originData;
+            ordersFillerData[i] = filledOrders[_orderIds[i]].fillerData;
         }
 
-        _handleSettlement(_orderIds, ordersFillerData);
+        _settleOrders(_orderIds, ordersOriginData, ordersFillerData);
 
         emit Settle(_orderIds, ordersFillerData);
     }
-    function refund(OrderData[] memory _ordersData) external payable {
-        bytes32[] memory orderIds = new bytes32[](_ordersData.length);
-        for (uint256 i = 0; i < _ordersData.length; i += 1) {
-            bytes32 orderId = _getOrderId(_ordersData[i]);
 
-            if (orderStatus[orderId] != OrderStatus.UNFILLED) revert InvalidOrderStatus();
-            if (block.timestamp <= _ordersData[i].fillDeadline) revert OrderFillNotExpired();
-
-            // we need to check the domain and counterpart here since the fill function was not called
-            if (_ordersData[i].destinationDomain != _localDomain()) revert InvalidOrderDomain();
-            _mustHaveRemoteCounterpart(_ordersData[i].originDomain);
-
-            orders[orderId] = _ordersData[i];
-            orderStatus[orderId] = OrderStatus.REFUNDED;
+    // TODO - refactor this two
+    function refund(GaslessCrossChainOrder[] memory _orders) external payable {
+        bytes32[] memory orderIds = new bytes32[](_orders.length);
+        for (uint256 i = 0; i < _orders.length; i += 1) {
+            bytes32 orderId = _getOrderId(_orders[i]);
             orderIds[i] = orderId;
+
+            if (orderStatus[orderId] != UNKNOWN) revert InvalidOrderStatus();
+            if (block.timestamp <= _orders[i].fillDeadline) revert OrderFillNotExpired();
+
+            // the status is changed on origin, the caller responsibility to ensure the order hasn't been refunded
+            // on origin yet. In case one of the orders is not from the same origin domain as the first one, the caller
+            // can retry the refund
         }
 
-        _handleRefund(orderIds);
+        _refundOrders(_orders, orderIds);
+
+        emit Refund(orderIds);
+    }
+
+    function refund(OnchainCrossChainOrder[] memory _orders) external payable {
+        bytes32[] memory orderIds = new bytes32[](_orders.length);
+        for (uint256 i = 0; i < _orders.length; i += 1) {
+            bytes32 orderId = _getOrderId(_orders[i]);
+            orderIds[i] = orderId;
+
+            if (orderStatus[orderId] != UNKNOWN) revert InvalidOrderStatus();
+            if (block.timestamp <= _orders[i].fillDeadline) revert OrderFillNotExpired();
+
+            // the status is changed on origin, the caller responsibility to ensure the order hasn't been refunded
+            // on origin yet. In case one of the orders is not from the same origin domain as the first one, the caller
+            // can retry the refund
+        }
+
+        _refundOrders(_orders, orderIds);
 
         emit Refund(orderIds);
     }
 
     // ============ Public Functions ============
 
-    function witnessHash(GaslessCrossChainOrder calldata order) public pure returns (bytes32) {
+    function witnessHash(ResolvedCrossChainOrder memory resolvedOrder) public pure virtual returns (bytes32) {
         return keccak256(
             abi.encode(
-                GASLESS_CROSS_CHAIN_ORDER_TYPEHASH,
-                order.originSettler,
-                order.user,
-                order.nonce,
-                order.originChainId,
-                order.openDeadline,
-                order.fillDeadline,
-                order.orderDataType,
-                order.orderData
+                RESOLVED_CROSS_CHAIN_ORDER_TYPEHASH,
+                resolvedOrder.user,
+                resolvedOrder.originChainId,
+                resolvedOrder.openDeadline,
+                resolvedOrder.fillDeadline,
+                resolvedOrder.maxSpent,
+                resolvedOrder.minReceived,
+                resolvedOrder.fillInstructions
             )
         );
     }
 
-    // ============ Internal Functions ============
+    /// @notice Invalidates the a nonce for the user calling the function
+    /// @param nonce The nonce to get the associated word and bit positions
+    function invalidateNonces(uint256 nonce) external virtual {
+        _useNonce(msg.sender, nonce);
 
-    function _getOrderId(OrderData memory orderData) internal pure returns (bytes32) {
-        return OrderEncoder.id(orderData);
+        emit NonceInvalidation(msg.sender, nonce);
     }
 
-    function _resolvedOrder(
-        bytes32 _orderType,
-        address _sender,
-        bytes memory _orderData,
-        uint32 _openDeadline,
-        uint32 _fillDeadline
-    )
-        internal
-        view
-        returns (ResolvedCrossChainOrder memory resolvedOrder, OrderData memory orderData)
-    {
-        if (_orderType != OrderEncoder.orderDataType()) revert InvalidOrderType(_orderType);
+    function isValidNonce(address from, uint256 nonce) external view virtual returns (bool) {
+        (uint256 wordPos, uint256 bitPos) = bitmapPositions(nonce);
+        uint256 bit = 1 << bitPos;
 
-        orderData = OrderEncoder.decode(_orderData);
+        return nonceBitmap[from][wordPos] & bit == 0;
+    }
 
-        if (orderData.originDomain != _localDomain()) revert InvalidOriginDomain(orderData.originDomain);
-        if (orderData.sender != TypeCasts.addressToBytes32(_sender)) revert InvalidSender();
-        if (orderData.senderNonce != senderNonce[_sender]) revert InvalidSenderNonce();
-        bytes32 destinationSettler = _mustHaveRemoteCounterpart(orderData.destinationDomain);
+    // ============ Internal Functions ============
 
-        // enforce fillDeadline into orderData
-        orderData.fillDeadline = _fillDeadline;
+    /// @notice Returns the index of the bitmap and the bit position within the bitmap. Used for unordered nonces
+    /// @param nonce The nonce to get the associated word and bit positions
+    /// @return wordPos The word position or index into the nonceBitmap
+    /// @return bitPos The bit position
+    /// @dev The first 248 bits of the nonce value is the index of the desired bitmap
+    /// @dev The last 8 bits of the nonce value is the position of the bit in the bitmap
+    function bitmapPositions(uint256 nonce) private pure returns (uint256 wordPos, uint256 bitPos) {
+        wordPos = uint248(nonce >> 8);
+        bitPos = uint8(nonce);
+    }
 
-        // this can be used by the filler to approve the tokens to be spent on destination
-        Output[] memory maxSpent = new Output[](1);
-        maxSpent[0] = Output({
-            token: orderData.outputToken,
-            amount: orderData.amountOut,
-            recipient: destinationSettler,
-            chainId: orderData.destinationDomain
-        });
+    /// @notice Checks whether a nonce is taken and sets the bit at the bit position in the bitmap at the word position
+    /// @param from The address to use the nonce at
+    /// @param nonce The nonce to spend
+    function _useNonce(address from, uint256 nonce) internal {
+        (uint256 wordPos, uint256 bitPos) = bitmapPositions(nonce);
+        uint256 bit = 1 << bitPos;
+        uint256 flipped = nonceBitmap[from][wordPos] ^= bit;
 
-        // this can be used by the filler know how much it can expect to receive
-        Output[] memory minReceived = new Output[](1);
-        minReceived[0] = Output({
-            token: orderData.inputToken,
-            amount: orderData.amountIn,
-            recipient: bytes32(0),
-            chainId: orderData.originDomain
-        });
-
-        // this can be user by the filler to know how to fill the order
-        FillInstruction[] memory fillInstructions = new FillInstruction[](1);
-        fillInstructions[0] = FillInstruction({
-            destinationChainId: orderData.destinationDomain,
-            destinationSettler: destinationSettler,
-            originData: OrderEncoder.encode(orderData)
-        });
-
-        resolvedOrder = ResolvedCrossChainOrder({
-            user: _sender,
-            originChainId: _localDomain(),
-            openDeadline: _openDeadline,
-            fillDeadline: _fillDeadline,
-            minReceived: minReceived,
-            maxSpent: maxSpent,
-            fillInstructions: fillInstructions
-        });
+        if (flipped & bit == 0) revert InvalidNonce();
     }
 
     function _permitTransferFrom(
-        GaslessCrossChainOrder calldata order,
+        ResolvedCrossChainOrder memory resolvedOrder,
         bytes calldata signature,
+        uint256 nonce,
         address receiver
     )
         internal
     {
-        OrderData memory orderData = OrderEncoder.decode(order.orderData);
+        ISignatureTransfer.TokenPermissions[] memory permitted =
+            new ISignatureTransfer.TokenPermissions[](resolvedOrder.minReceived.length);
+
+        ISignatureTransfer.SignatureTransferDetails[] memory transferDetails =
+            new ISignatureTransfer.SignatureTransferDetails[](resolvedOrder.minReceived.length);
+
+        for (uint256 i = 0; i < resolvedOrder.minReceived.length; i++) {
+            permitted[i] = ISignatureTransfer.TokenPermissions({
+                token: TypeCasts.bytes32ToAddress(resolvedOrder.minReceived[i].token),
+                amount: resolvedOrder.minReceived[i].amount
+            });
+            transferDetails[i] = ISignatureTransfer.SignatureTransferDetails({
+                to: receiver,
+                requestedAmount: resolvedOrder.minReceived[i].amount
+            });
+        }
+
+        ISignatureTransfer.PermitBatchTransferFrom memory permit = ISignatureTransfer.PermitBatchTransferFrom({
+            permitted: permitted,
+            nonce: nonce,
+            deadline: resolvedOrder.openDeadline
+        });
 
         PERMIT2.permitWitnessTransferFrom(
-            ISignatureTransfer.PermitTransferFrom({
-                permitted: ISignatureTransfer.TokenPermissions({
-                    token: TypeCasts.bytes32ToAddress(orderData.inputToken),
-                    amount: orderData.amountIn
-                }),
-                nonce: order.nonce,
-                deadline: order.openDeadline
-            }),
-            ISignatureTransfer.SignatureTransferDetails({ to: receiver, requestedAmount: orderData.amountIn }),
-            order.user,
-            witnessHash(order),
-            witnessTypeString,
-            signature
+            permit, transferDetails, resolvedOrder.user, witnessHash(resolvedOrder), witnessTypeString, signature
         );
     }
 
     /**
-     * @dev This function is meant to be called by the inheriting contract when receiving a settle cross-chain message
-     * from a remote domain counterpart
-    */
-    function _settleOrder(bytes32 _orderId, bytes32 _receiver, uint32 _settlingDomain) internal {
-        OrderData memory orderData = orders[_orderId];
-
-        if (orderData.destinationDomain != _settlingDomain) revert InvalidDomain();
-        if (orderStatus[_orderId] != OrderStatus.OPENED) revert InvalidOrderStatus();
-
-        orderStatus[_orderId] = OrderStatus.SETTLED;
-
-        address receiver = TypeCasts.bytes32ToAddress(_receiver);
-
-        emit Settled(_orderId, receiver);
-
-        IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransfer(
-            receiver, orderData.amountIn
-        );
-    }
+     * @dev To be implemented by the inheriting contract with specific logic fot the orderDataType and orderData
+     */
+    function _resolveOrder(GaslessCrossChainOrder memory order)
+        internal
+        view
+        virtual
+        returns (ResolvedCrossChainOrder memory, bytes32 orderId, uint256 nonce);
 
     /**
-     * @dev This function is meant to be called by the inheriting contract when receiving a refund cross-chain message
-     * from a remote domain counterpart
-    */
-    function _refundOrder(bytes32 _orderId, uint32 _refundingDomain) internal {
-        OrderData memory orderData = orders[_orderId];
+     * @dev To be implemented by the inheriting contract with specific logic fot the orderDataType and orderData
+     */
+    function _resolveOrder(OnchainCrossChainOrder memory order)
+        internal
+        view
+        virtual
+        returns (ResolvedCrossChainOrder memory, bytes32 orderId, uint256 nonce);
 
-        if (orderData.destinationDomain != _refundingDomain) revert InvalidDomain();
-        if (orderStatus[_orderId] != OrderStatus.OPENED) revert InvalidOrderStatus();
+    function _fillOrder(bytes32 _orderId, bytes calldata _originData, bytes calldata _fillerData) internal virtual;
 
-        orderStatus[_orderId] = OrderStatus.REFUNDED;
+    function _settleOrders(
+        bytes32[] calldata _orderIds,
+        bytes[] memory ordersOriginData,
+        bytes[] memory ordersFillerData
+    )
+        internal
+        virtual;
 
-        address orderSender = TypeCasts.bytes32ToAddress(orderData.sender);
-
-        emit Refunded(_orderId, orderSender);
-
-        IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransfer(
-            orderSender, orderData.amountIn
-        );
-    }
-
-    /**
-     * @dev This function is called during `settle` to handle the settlement of the orders, it is meant to be
-     * implemented by the inheriting contract with specific settlement logic. i.e. sending a cross-chain message
-    */
-    function _handleSettlement(bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) internal virtual;
-
-    /**
-     * @dev This function is called during `refund` to handle the refund of the orders, it is meant to be
-     * implemented by the inheriting contract with specific refund logic. i.e. sending a cross-chain message
-    */
-    function _handleRefund(bytes32[] memory _orderIds) internal virtual;
-
-    /**
-     * @dev To be implemented by the inheriting contract with specific logic, the address of its remote counterpart and
-     * revert if it does not exist
-    */
-    function _mustHaveRemoteCounterpart(uint32 _domain) internal view virtual returns (bytes32);
+    function _refundOrders(OnchainCrossChainOrder[] memory _orders, bytes32[] memory _orderIds) internal virtual;
+    function _refundOrders(GaslessCrossChainOrder[] memory _orders, bytes32[] memory _orderIds) internal virtual;
 
     /**
      * @dev To be implemented by the inheriting contract with specific logic, should return the local domain
-    */
+     */
     function _localDomain() internal view virtual returns (uint32);
+
+    function _getOrderId(GaslessCrossChainOrder memory order) internal pure virtual returns (bytes32);
+    function _getOrderId(OnchainCrossChainOrder memory order) internal pure virtual returns (bytes32);
+
+    function getfilledOrder(bytes32 orderId) external view returns (FilledOrder memory) {
+        return filledOrders[orderId];
+    }
 }

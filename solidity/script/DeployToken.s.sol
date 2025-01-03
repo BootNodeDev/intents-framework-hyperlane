@@ -8,7 +8,7 @@ import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract IntentTestToken is ERC20 {
     constructor(address receiver) ERC20("IntentTestToken", "ITT") {
-        _mint(receiver, 1000000 * 10 ** decimals());
+        _mint(receiver, 1_000_000 * 10 ** decimals());
     }
 }
 
@@ -20,7 +20,7 @@ contract DeployToken is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        IntentTestToken itt = new IntentTestToken{salt: keccak256(abi.encode("IntentTestToken.0.0.1"))}(owner);
+        IntentTestToken itt = new IntentTestToken{ salt: keccak256(abi.encode("IntentTestToken.0.0.1")) }(owner);
 
         vm.stopBroadcast();
 

@@ -11,6 +11,6 @@
     "forge-std/=../node_modules/forge-std/src/",
     "@hyperlane-xyz/=../node_modules/@hyperlane-xyz/core/contracts/",
     "contracts/=../node_modules/@hyperlane-xyz/core/contracts/",
-    "@uniswap/=../node_modules/@uniswap/",
+    "@uniswap/=../node_modules/@uniswap/"
   ]
 }

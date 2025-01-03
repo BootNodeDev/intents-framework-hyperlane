@@ -121,7 +121,7 @@ interface IOriginSettler {
     /// @dev To be called by the user
     /// @dev This method must emit the Open event
     /// @param order The OnchainCrossChainOrder definition
-    function open(OnchainCrossChainOrder calldata order) external;
+    function open(OnchainCrossChainOrder calldata order) external payable;
 
     /// @notice Resolves a specific GaslessCrossChainOrder into a generic ResolvedCrossChainOrder
     /// @dev Intended to improve standardized integration of various order types and settlement contracts
@@ -150,5 +150,5 @@ interface IDestinationSettler {
     /// @param orderId Unique order identifier for this order
     /// @param originData Data emitted on the origin to parameterize the fill
     /// @param fillerData Data provided by the filler to inform the fill or express their preferences
-    function fill(bytes32 orderId, bytes calldata originData, bytes calldata fillerData) external;
+    function fill(bytes32 orderId, bytes calldata originData, bytes calldata fillerData) external payable;
 }
