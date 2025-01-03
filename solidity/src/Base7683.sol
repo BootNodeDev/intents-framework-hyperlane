@@ -3,6 +3,7 @@ pragma solidity 0.8.25;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import { Address } from "@openzeppelin/contracts/utils/Address.sol";
 import { TypeCasts } from "@hyperlane-xyz/libs/TypeCasts.sol";
 import { IPermit2, ISignatureTransfer } from "@uniswap/permit2/src/interfaces/IPermit2.sol";
 
@@ -76,6 +77,7 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     error OrderFillNotExpired();
     error InvalidDomain();
     error InvalidSender();
+    error InvalidAmount();
 
     // ============ Constructor ============
 
@@ -120,7 +122,7 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     /// @dev To be called by the user
     /// @dev This method must emit the Open event
     /// @param order The OnchainCrossChainOrder definition
-    function open(OnchainCrossChainOrder calldata order) external {
+    function open(OnchainCrossChainOrder calldata order) external payable {
         (ResolvedCrossChainOrder memory resolvedOrder, OrderData memory orderData) = _resolvedOrder(
             order.orderDataType,
             msg.sender,
@@ -135,9 +137,13 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
         orderStatus[orderId] = OrderStatus.OPENED;
         senderNonce[msg.sender] += 1;
 
-        IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransferFrom(
-            msg.sender, address(this), orderData.amountIn
-        );
+        if (orderData.inputToken != TypeCasts.addressToBytes32(address(0))) {
+            IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransferFrom(
+                msg.sender, address(this), orderData.amountIn
+            );
+        } else {
+            if (msg.value != orderData.amountIn) revert InvalidAmount();
+        }
 
         emit Open(orderId, resolvedOrder);
     }
@@ -182,7 +188,7 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
     /// @param _originData Data emitted on the origin to parameterize the fill
     /// @param _fillerData Data provided by the filler to inform the fill or express their preferences. It should
     /// contain the bytes32 encoded address of the receiver which is the used at settlement time
-    function fill(bytes32 _orderId, bytes calldata _originData, bytes calldata _fillerData) external virtual {
+    function fill(bytes32 _orderId, bytes calldata _originData, bytes calldata _fillerData) external payable virtual {
         OrderData memory orderData = OrderEncoder.decode(_originData);
 
         if (_orderId != _getOrderId(orderData)) revert InvalidOrderId();
@@ -197,9 +203,14 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
 
         emit Filled(_orderId, _originData, _fillerData);
 
-        IERC20(TypeCasts.bytes32ToAddress(orderData.outputToken)).safeTransferFrom(
-            msg.sender, TypeCasts.bytes32ToAddress(orderData.recipient), orderData.amountOut
-        );
+        if (orderData.outputToken != TypeCasts.addressToBytes32(address(0))) {
+            IERC20(TypeCasts.bytes32ToAddress(orderData.outputToken)).safeTransferFrom(
+                msg.sender, TypeCasts.bytes32ToAddress(orderData.recipient), orderData.amountOut
+            );
+        } else {
+            if (msg.value != orderData.amountOut) revert InvalidAmount();
+            Address.sendValue(payable(TypeCasts.bytes32ToAddress(orderData.recipient)), orderData.amountOut);
+        }
     }
 
     function settle(bytes32[] calldata _orderIds) external payable {
@@ -365,9 +376,13 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
 
         emit Settled(_orderId, receiver);
 
-        IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransfer(
-            receiver, orderData.amountIn
-        );
+        if (orderData.inputToken != TypeCasts.addressToBytes32(address(0))) {
+            IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransfer(
+                receiver, orderData.amountIn
+            );
+        } else {
+            Address.sendValue(payable(receiver), orderData.amountIn);
+        }
     }
 
     /**
@@ -386,9 +401,13 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
 
         emit Refunded(_orderId, orderSender);
 
-        IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransfer(
-            orderSender, orderData.amountIn
-        );
+        if (orderData.inputToken != TypeCasts.addressToBytes32(address(0))) {
+            IERC20(TypeCasts.bytes32ToAddress(orderData.inputToken)).safeTransfer(
+                orderSender, orderData.amountIn
+            );
+        } else {
+            Address.sendValue(payable(orderSender), orderData.amountIn);
+        }
     }
 
     /**

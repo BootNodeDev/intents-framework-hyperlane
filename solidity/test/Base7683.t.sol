@@ -255,6 +255,17 @@ contract Base7683Test is Test, DeployPermit2 {
         return _balances;
     }
 
+    function balances() internal view returns (uint256[] memory) {
+        uint256[] memory _balances = new uint256[](5);
+        _balances[0] = kakaroto.balance;
+        _balances[1] = karpincho.balance;
+        _balances[2] = vegeta.balance;
+        _balances[3] = counterpart.balance;
+        _balances[4] = address(base).balance;
+
+        return _balances;
+    }
+
     function orderDataById(bytes32 orderId) internal view returns (OrderData memory orderData) {
         (
             bytes32 _sender,
@@ -344,6 +355,70 @@ contract Base7683Test is Test, DeployPermit2 {
         assertResolvedOrder(resolvedOrder, orderData, kakaroto, _fillDeadline, type(uint32).max);
 
         assertOpenOrder(orderId, kakaroto, orderData, balancesBefore, kakaroto, nonceBefore);
+
+        vm.stopPrank();
+    }
+
+    function test_open__native_token_works(uint32 _fillDeadline) public {
+        OrderData memory orderData = prepareOrderData();
+        orderData.inputToken = TypeCasts.addressToBytes32(address(0));
+        orderData.outputToken = TypeCasts.addressToBytes32(address(0));
+
+        OnchainCrossChainOrder memory order =
+            prepareOnchainOrder(orderData, _fillDeadline, OrderEncoder.orderDataType());
+
+        deal(kakaroto, 1_000_000);
+
+        vm.startPrank(kakaroto);
+
+        uint256 nonceBefore = base.senderNonce(kakaroto);
+        uint256[] memory balancesBefore = balances();
+
+        vm.recordLogs();
+        base.open{value: amount}(order);
+
+        (bytes32 orderId, ResolvedCrossChainOrder memory resolvedOrder) = getOrderIDFromLogs();
+
+        // assertResolvedOrder(resolvedOrder, orderData, kakaroto, _fillDeadline, type(uint32).max);
+        assertEq(resolvedOrder.maxSpent.length, 1);
+        assertEq(resolvedOrder.maxSpent[0].token, TypeCasts.addressToBytes32(address(0)));
+        assertEq(resolvedOrder.maxSpent[0].amount, amount);
+        assertEq(resolvedOrder.maxSpent[0].recipient, base.counterpart());
+        assertEq(resolvedOrder.maxSpent[0].chainId, destination);
+
+        assertEq(resolvedOrder.minReceived.length, 1);
+        assertEq(resolvedOrder.minReceived[0].token, TypeCasts.addressToBytes32(address(0)));
+        assertEq(resolvedOrder.minReceived[0].amount, amount);
+        assertEq(resolvedOrder.minReceived[0].recipient, bytes32(0));
+        assertEq(resolvedOrder.minReceived[0].chainId, origin);
+
+        assertEq(resolvedOrder.fillInstructions.length, 1);
+        assertEq(resolvedOrder.fillInstructions[0].destinationChainId, destination);
+        assertEq(resolvedOrder.fillInstructions[0].destinationSettler, base.counterpart());
+
+        orderData.fillDeadline = _fillDeadline;
+        assertEq(resolvedOrder.fillInstructions[0].originData, OrderEncoder.encode(orderData));
+
+        assertEq(resolvedOrder.user, kakaroto);
+        assertEq(resolvedOrder.originChainId, base.localDomain());
+        assertEq(resolvedOrder.openDeadline, type(uint32).max);
+        assertEq(resolvedOrder.fillDeadline, _fillDeadline);
+
+        // assertOpenOrder(orderId, kakaroto, orderData, balancesBefore, kakaroto, nonceBefore);
+        OrderData memory savedOrderData = orderDataById(orderId);
+
+        assertEq(base.senderNonce(kakaroto), nonceBefore + 1);
+        assertEq(OrderEncoder.encode(savedOrderData), OrderEncoder.encode(orderData));
+        // assertOrder(orderId, orderData, balancesBefore, inputToken, user, address(base), Base7683.OrderStatus.OPENED);
+
+        Base7683.OrderStatus status = base.orderStatus(orderId);
+
+        assertEq(OrderEncoder.encode(savedOrderData), OrderEncoder.encode(orderData));
+        assertTrue(status == Base7683.OrderStatus.OPENED);
+
+        uint256[] memory balancesAfter = balances();
+        assertEq(balancesBefore[balanceId[kakaroto]] - amount, balancesAfter[balanceId[kakaroto]]);
+        assertEq(balancesBefore[balanceId[address(base)]] + amount, balancesAfter[balanceId[address(base)]]);
 
         vm.stopPrank();
     }
@@ -475,6 +550,45 @@ contract Base7683Test is Test, DeployPermit2 {
         vm.stopPrank();
     }
 
+    function test_fill_native_works() public {
+        OrderData memory orderData = prepareOrderData();
+        orderData.inputToken = TypeCasts.addressToBytes32(address(0));
+        orderData.outputToken = TypeCasts.addressToBytes32(address(0));
+
+        orderData.originDomain = destination;
+        orderData.destinationDomain = origin;
+
+        bytes32 orderId = OrderEncoder.id(orderData);
+
+        deal(vegeta, 1_000_000);
+
+        uint256[] memory balancesBefore = balances();
+
+        vm.startPrank(vegeta);
+
+        bytes memory fillerData = abi.encode(TypeCasts.addressToBytes32(vegeta));
+
+        vm.expectEmit(false, false, false, true);
+        emit Filled(orderId, OrderEncoder.encode(orderData), fillerData);
+
+        base.fill{value: amount}(orderId, OrderEncoder.encode(orderData), fillerData);
+
+        // assertOrder(orderId, orderData, balancesBefore, outputToken, vegeta, karpincho, Base7683.OrderStatus.FILLED);
+        OrderData memory savedOrderData = orderDataById(orderId);
+        Base7683.OrderStatus status = base.orderStatus(orderId);
+
+        assertEq(OrderEncoder.encode(savedOrderData), OrderEncoder.encode(orderData));
+        assertTrue(status == Base7683.OrderStatus.FILLED);
+
+        uint256[] memory balancesAfter = balances();
+        assertEq(balancesBefore[balanceId[vegeta]] - amount, balancesAfter[balanceId[vegeta]]);
+        assertEq(balancesBefore[balanceId[karpincho]] + amount, balancesAfter[balanceId[karpincho]]);
+
+        assertEq(base.orderFillerData(orderId), fillerData);
+
+        vm.stopPrank();
+    }
+
     // settle
     function test_settle_works() public {
         OrderData memory orderData = prepareOrderData();
@@ -562,6 +676,40 @@ contract Base7683Test is Test, DeployPermit2 {
         assertEq(balancesBefore[balanceId[vegeta]] + amount, balancesAfter[balanceId[vegeta]]);
     }
 
+    function test_settleOrder_native_works() public {
+        OrderData memory orderData = prepareOrderData();
+        orderData.inputToken = TypeCasts.addressToBytes32(address(0));
+        orderData.outputToken = TypeCasts.addressToBytes32(address(0));
+
+        OnchainCrossChainOrder memory order =
+            prepareOnchainOrder(orderData, orderData.fillDeadline, OrderEncoder.orderDataType());
+
+        deal(kakaroto, 1_000_000);
+
+        vm.startPrank(kakaroto);
+
+        vm.recordLogs();
+        base.open{value: amount}(order);
+
+        (bytes32 orderId,) = getOrderIDFromLogs();
+
+        vm.stopPrank();
+
+        uint256[] memory balancesBefore = balances();
+
+        vm.expectEmit(false, false, false, true);
+        emit Settled(orderId, vegeta);
+
+        vm.prank(vegeta);
+        base.settleOrder(orderId);
+
+        uint256[] memory balancesAfter = balances();
+
+        assertTrue(base.orderStatus(orderId) == Base7683.OrderStatus.SETTLED);
+        assertEq(balancesBefore[balanceId[address(base)]] - amount, balancesAfter[balanceId[address(base)]]);
+        assertEq(balancesBefore[balanceId[vegeta]] + amount, balancesAfter[balanceId[vegeta]]);
+    }
+
     // _refundOrder
     function test_refundOrder_works() public {
         OrderData memory orderData = prepareOrderData();
@@ -589,6 +737,42 @@ contract Base7683Test is Test, DeployPermit2 {
         base.refundOrder(orderId);
 
         uint256[] memory balancesAfter = balances(inputToken);
+
+        assertTrue(base.orderStatus(orderId) == Base7683.OrderStatus.REFUNDED);
+        assertEq(balancesBefore[balanceId[address(base)]] - amount, balancesAfter[balanceId[address(base)]]);
+        assertEq(balancesBefore[balanceId[kakaroto]] + amount, balancesAfter[balanceId[kakaroto]]);
+    }
+
+    function test_refundOrder_native_works() public {
+        OrderData memory orderData = prepareOrderData();
+        orderData.inputToken = TypeCasts.addressToBytes32(address(0));
+        orderData.outputToken = TypeCasts.addressToBytes32(address(0));
+
+        OnchainCrossChainOrder memory order =
+            prepareOnchainOrder(orderData, orderData.fillDeadline, OrderEncoder.orderDataType());
+
+        deal(kakaroto, 1_000_000);
+
+        vm.startPrank(kakaroto);
+
+        vm.recordLogs();
+        base.open{value: amount}(order);
+
+        (bytes32 orderId,) = getOrderIDFromLogs();
+
+        vm.stopPrank();
+
+        vm.warp(orderData.fillDeadline + 1);
+
+        uint256[] memory balancesBefore = balances();
+
+        vm.expectEmit(false, false, false, true);
+        emit Refunded(orderId, kakaroto);
+
+        vm.prank(vegeta);
+        base.refundOrder(orderId);
+
+        uint256[] memory balancesAfter = balances();
 
         assertTrue(base.orderStatus(orderId) == Base7683.OrderStatus.REFUNDED);
         assertEq(balancesBefore[balanceId[address(base)]] - amount, balancesAfter[balanceId[address(base)]]);
