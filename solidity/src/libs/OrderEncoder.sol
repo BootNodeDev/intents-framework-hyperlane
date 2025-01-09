@@ -11,6 +11,7 @@ struct OrderData {
     uint256 senderNonce;
     uint32 originDomain;
     uint32 destinationDomain;
+    bytes32 destinationSettler;
     uint32 fillDeadline;
     bytes data;
 }
@@ -27,6 +28,7 @@ library OrderEncoder {
         "uint256 senderNonce,",
         "uint32 originDomain,",
         "uint32 destinationDomain,",
+        "bytes32 destinationSettler,",
         "uint32 fillDeadline,",
         "bytes data)"
     );

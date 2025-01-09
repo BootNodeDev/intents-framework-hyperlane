@@ -34,20 +34,20 @@ contract DeployHyperlane7683 is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        ProxyAdmin proxyAdmin = new OwnableProxyAdmin{salt: keccak256(abi.encode(ROUTER_SALT))}(proxyAdminOwner);
+        ProxyAdmin proxyAdmin = new OwnableProxyAdmin{ salt: keccak256(abi.encode(ROUTER_SALT)) }(proxyAdminOwner);
 
-        address routerImpl = address(new Hyperlane7683{salt: keccak256(abi.encode(ROUTER_SALT))}(mailbox, permit2));
-        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy{salt: keccak256(abi.encode(ROUTER_SALT))}(
-          routerImpl,
-          address(proxyAdmin),
-          abi.encodeWithSelector(Hyperlane7683.initialize.selector, address(0), address(0), owner)
+        address routerImpl = address(new Hyperlane7683{ salt: keccak256(abi.encode(ROUTER_SALT)) }(mailbox, permit2));
+        TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy{ salt: keccak256(abi.encode(ROUTER_SALT)) }(
+            routerImpl,
+            address(proxyAdmin),
+            abi.encodeWithSelector(Hyperlane7683.initialize.selector, address(0), address(0), owner)
         );
 
-        for (uint i = 0; i < domains.length; i++) {
-          routers[i] = TypeCasts.addressToBytes32(address(proxy));
-          _domains[i] = uint32(domains[i]);
-          // amount is based on gas report from tests multiply 2
-          gasConfigs[i] = GasRouter.GasRouterConfig(_domains[i], 1070688);
+        for (uint256 i = 0; i < domains.length; i++) {
+            routers[i] = TypeCasts.addressToBytes32(address(proxy));
+            _domains[i] = uint32(domains[i]);
+            // amount is based on gas report from tests multiply 2
+            gasConfigs[i] = GasRouter.GasRouterConfig(_domains[i], 1_070_688);
         }
 
         Hyperlane7683(address(proxy)).enrollRemoteRouters(_domains, routers);

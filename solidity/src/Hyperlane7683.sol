@@ -3,11 +3,16 @@ pragma solidity 0.8.25;
 
 import { GasRouter } from "@hyperlane-xyz/client/GasRouter.sol";
 
-import { Base7683 } from "./Base7683.sol";
-import { OrderData, OrderEncoder } from "./libs/OrderEncoder.sol";
-import { Router7683Message} from "./libs/Route7683Message.sol";
+import { Hyperlane7683Message } from "./libs/Hyperlane7683Message.sol";
+import { BasicSwap7683 } from "./BasicSwap7683.sol";
 
-contract Hyperlane7683 is GasRouter, Base7683 {
+/**
+ * @title Hyperlane7683
+ * @author BootNode
+ * @notice This contract builds on top of BasicSwap7683 as a messaging layer using Hyperlane.
+ * @dev It integrates with the Hyperlane protocol for cross-chain communication.
+ */
+contract Hyperlane7683 is GasRouter, BasicSwap7683 {
     // ============ Libraries ============
 
     // ============ Constants ============
@@ -15,20 +20,22 @@ contract Hyperlane7683 is GasRouter, Base7683 {
     // ============ Public Storage ============
 
     // ============ Upgrade Gap ============
-
+    /// @dev Reserved storage slots for upgradeability.
     uint256[47] private __GAP;
 
     // ============ Events ============
 
     // ============ Errors ============
 
-    error InvalidOrderOrigin();
-
     // ============ Modifiers ============
 
     // ============ Constructor ============
-
-    constructor(address _mailbox, address _permit2) GasRouter(_mailbox) Base7683(_permit2) { }
+    /**
+     * @notice Initializes the Hyperlane7683 contract with the specified Mailbox and PERMIT2 address.
+     * @param _mailbox The address of the Hyperlane mailbox contract.
+     * @param _permit2 The address of the permit2 contract.
+     */
+    constructor(address _mailbox, address _permit2) GasRouter(_mailbox) BasicSwap7683(_permit2) { }
 
     // ============ Initializers ============
 
@@ -42,38 +49,65 @@ contract Hyperlane7683 is GasRouter, Base7683 {
         _MailboxClient_initialize(_customHook, _interchainSecurityModule, _owner);
     }
 
+    // ============ External Functions ============
+
     // ============ Internal Functions ============
 
-    function _handle(uint32 _origin, bytes32, bytes calldata _message) internal virtual override {
-        (bool _settle, bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) = Router7683Message.decode(_message);
+    /**
+     * @notice Dispatches a settlement message to the specified domain.
+     * @dev Encodes the settle message using Hyperlane7683Message and dispatches it via the GasRouter.
+     * @param _originDomain The domain to which the settlement message is sent.
+     * @param _orderIds The IDs of the orders to settle.
+     * @param _ordersFillerData The filler data for the orders.
+     */
+    function _dispatchSettle(
+        uint32 _originDomain,
+        bytes32[] memory _orderIds,
+        bytes[] memory _ordersFillerData
+    )
+        internal
+        override
+    {
+        _GasRouter_dispatch(
+            _originDomain, msg.value, Hyperlane7683Message.encodeSettle(_orderIds, _ordersFillerData), address(hook)
+        );
+    }
 
-        for (uint i = 0; i < _orderIds.length; i++) {
-            // check if the order is opened to ensure it belongs to this domain, skip otherwise
-            if (orderStatus[_orderIds[i]] != OrderStatus.OPENED) continue;
+    /**
+     * @notice Dispatches a refund message to the specified domain.
+     * @dev Encodes the refund message using Hyperlane7683Message and dispatches it via the GasRouter.
+     * @param _originDomain The domain to which the refund message is sent.
+     * @param _orderIds The IDs of the orders to refund.
+     */
+    function _dispatchRefund(uint32 _originDomain, bytes32[] memory _orderIds) internal override {
+        _GasRouter_dispatch(_originDomain, msg.value, Hyperlane7683Message.encodeRefund(_orderIds), address(hook));
+    }
 
+    /**
+     * @notice Handles incoming messages.
+     * @dev Decodes the message and processes settlement or refund operations accordingly.
+     * _originDomain The domain from which the message originates (unused in this implementation).
+     * _sender The address of the sender on the origin domain (unused in this implementation).
+     * @param _message The encoded message received via Hyperlane.
+     */
+    function _handle(uint32, bytes32, bytes calldata _message) internal virtual override {
+        (bool _settle, bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) =
+            Hyperlane7683Message.decode(_message);
+
+        for (uint256 i = 0; i < _orderIds.length; i++) {
             if (_settle) {
-                _settleOrder(_orderIds[i], abi.decode(_ordersFillerData[i], (bytes32)), _origin);
+                _handleSettleOrder(_orderIds[i], abi.decode(_ordersFillerData[i], (bytes32)));
             } else {
-                _refundOrder(_orderIds[i], _origin);
-
+                _handleRefundOrder(_orderIds[i]);
             }
         }
     }
 
-    function _handleSettlement(bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) internal virtual override {
-        uint32 originDomain = orders[_orderIds[0]].originDomain;
-        _GasRouter_dispatch(originDomain, msg.value, Router7683Message.encodeSettle(_orderIds, _ordersFillerData), address(hook));
-    }
-
-    function _handleRefund(bytes32[] memory _orderIds) internal virtual override {
-        uint32 originDomain = orders[_orderIds[0]].originDomain;
-        _GasRouter_dispatch(originDomain, msg.value, Router7683Message.encodeRefund(_orderIds), address(hook));
-    }
-
-    function _mustHaveRemoteCounterpart(uint32 _domain) internal view virtual override returns (bytes32) {
-        return _mustHaveRemoteRouter(_domain);
-    }
-
+    /**
+     * @notice Retrieves the local domain identifier.
+     * @dev This function overrides the `_localDomain` function from the parent contract.
+     * @return The local domain ID.
+     */
     function _localDomain() internal view override returns (uint32) {
         return localDomain;
     }
