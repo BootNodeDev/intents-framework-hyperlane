@@ -1,18 +1,20 @@
+import { chainIdsToName } from "../../config/index.js";
 import type { TypedListener } from "../../typechain/common.js";
 import type {
   IntentCreatedEvent,
-  IntentCreatedEventObject,
   IntentSource,
 } from "../../typechain/eco/contracts/IntentSource.js";
+import { Erc20__factory } from "../../typechain/factories/contracts/Erc20__factory.js";
 import { IntentSource__factory } from "../../typechain/factories/eco/contracts/IntentSource__factory.js";
 import { BaseListener } from "../BaseListener.js";
-import { log } from "./utils.js";
 import { metadata } from "./config/index.js";
+import type { ParsedArgs } from "./types.js";
+import { log } from "./utils.js";
 
 export class EcoListener extends BaseListener<
   IntentSource,
   IntentCreatedEvent,
-  IntentCreatedEventObject
+  ParsedArgs
 > {
   constructor() {
     const { intentSources, protocolName } = metadata;
@@ -33,7 +35,19 @@ export class EcoListener extends BaseListener<
     nonce,
     _prover,
   ]: Parameters<TypedListener<IntentCreatedEvent>>) {
+    const destinationChainName = chainIdsToName[_destinationChain.toString()];
+    const erc20Interface = Erc20__factory.createInterface();
+
     return {
+      orderId: _hash,
+      senderAddress: _creator,
+      recipients: _data.map((data) => {
+        const [recipientAddress] = erc20Interface.decodeFunctionData(
+          "transfer",
+          data,
+        ) as [string];
+        return { destinationChainName, recipientAddress };
+      }),
       _hash,
       _creator,
       _destinationChain,

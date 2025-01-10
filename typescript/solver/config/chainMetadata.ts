@@ -7,8 +7,6 @@ import type { ChainMap, ChainMetadata } from "@hyperlane-xyz/sdk";
 
 import { objMerge } from "@hyperlane-xyz/utils";
 
-const baseChainMetadata = structuredClone(defaultChainMetadata);
-
 const customChainMetadata = {
   // Example custom configuration
   // "base": {
@@ -20,12 +18,12 @@ const customChainMetadata = {
   // }
 };
 
-const chainMetadata = objMerge(
-  baseChainMetadata,
+const chainMetadata = objMerge<ChainMap<ChainMetadata>>(
+  defaultChainMetadata,
   customChainMetadata,
   10,
   false,
-) as ChainMap<ChainMetadata>;
+);
 
 z.record(z.string(), ChainMetadataSchema).parse(chainMetadata);
 

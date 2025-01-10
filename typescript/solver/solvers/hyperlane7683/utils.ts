@@ -1,79 +1,12 @@
-import { AddressZero, Zero } from "@ethersproject/constants";
-import { formatUnits } from "@ethersproject/units";
 import type { MultiProvider } from "@hyperlane-xyz/sdk";
-import type { BigNumber } from "ethers";
 
-import { Erc20__factory } from "../../typechain/factories/contracts/Erc20__factory.js";
-
-import type { Provider } from "@ethersproject/abstract-provider";
 import { bytes32ToAddress } from "@hyperlane-xyz/utils";
-import { chainIdsToName } from "../../config/index.js";
 import { createLogger } from "../../logger.js";
 import { Hyperlane7683__factory } from "../../typechain/factories/hyperlane7683/contracts/Hyperlane7683__factory.js";
 import { metadata } from "./config/index.js";
 import type { ResolvedCrossChainOrder } from "./types.js";
 
 export const log = createLogger(metadata.protocolName);
-
-export async function checkChainTokens(
-  multiProvider: MultiProvider,
-  chainId: string,
-  token: { [token: string]: BigNumber },
-): Promise<[string, boolean]> {
-  const provider = multiProvider.getProvider(chainId);
-  const fillerAddress = await multiProvider.getSignerAddress(chainId);
-
-  const hasEnoughTokens = await Promise.all(
-    Object.entries(token).map(checkTokenBalance(provider, fillerAddress)),
-  );
-
-  return [chainId, hasEnoughTokens.every(Boolean)];
-}
-
-export function checkTokenBalance(provider: Provider, fillerAddress: string) {
-  return async ([tokenAddress, amount]: [string, BigNumber]) => {
-    let balance: BigNumber;
-
-    if (tokenAddress === AddressZero) {
-      balance = await provider.getBalance(fillerAddress);
-    } else {
-      const token = Erc20__factory.connect(tokenAddress, provider);
-      balance = await token.balanceOf(fillerAddress);
-    }
-
-    return balance.gte(amount);
-  };
-}
-
-export async function getChainIdsWithEnoughTokens(
-  resolvedOrder: ResolvedCrossChainOrder,
-  multiProvider: MultiProvider,
-) {
-  const amountByTokenByChain = resolvedOrder.maxSpent.reduce<{
-    [chainId: number]: { [token: string]: BigNumber };
-  }>((acc, { token, ...output }) => {
-    token = bytes32ToAddress(token);
-    const chainId = output.chainId.toNumber();
-
-    acc[chainId] ||= { [token]: Zero };
-    acc[chainId][token] ||= Zero;
-
-    acc[chainId][token] = acc[chainId][token].add(output.amount);
-
-    return acc;
-  }, {});
-
-  const _checkedChains: Array<Promise<[string, boolean]>> = [];
-  for (const chainId in amountByTokenByChain) {
-    _checkedChains.push(
-      checkChainTokens(multiProvider, chainId, amountByTokenByChain[chainId]),
-    );
-  }
-
-  return (await Promise.all(_checkedChains))
-    .filter(([, hasEnoughTokens]) => hasEnoughTokens)
-    .map(([chainId]) => chainId);
-}
 
 export async function settleOrder(
   fillInstructions: ResolvedCrossChainOrder["fillInstructions"],
@@ -130,88 +63,4 @@ export async function settleOrder(
       },
     ),
   );
-}
-
-export async function retrieveOriginInfo(
-  resolvedOrder: ResolvedCrossChainOrder,
-  multiProvider: MultiProvider,
-): Promise<Array<string>> {
-  const originInfo = await Promise.all(
-    resolvedOrder.minReceived.map(async ({ amount, chainId, token }) => {
-      const tokenAddress = bytes32ToAddress(token);
-
-      // native token
-      if (tokenAddress === AddressZero) {
-        const { nativeToken } = multiProvider.getChainMetadata(
-          chainId.toString(),
-        );
-
-        return {
-          amount,
-          decimals: nativeToken?.decimals ?? 18,
-          symbol: nativeToken?.symbol ?? "ETH",
-        };
-      }
-
-      const erc20 = Erc20__factory.connect(
-        tokenAddress,
-        multiProvider.getProvider(chainId.toString()),
-      );
-      const [decimals, symbol] = await Promise.all([
-        erc20.decimals(),
-        erc20.symbol(),
-      ]);
-
-      return { amount, decimals, symbol };
-    }),
-  );
-
-  const originChain =
-    chainIdsToName[resolvedOrder.originChainId.toNumber()] ?? "UNKNOWN_CHAIN";
-
-  return originInfo.map(
-    ({ amount, decimals, symbol }) =>
-      `${formatUnits(amount, decimals)} ${symbol} in on ${originChain}`,
-  );
-}
-
-export async function retrieveTargetInfo(
-  resolvedOrder: ResolvedCrossChainOrder,
-  multiProvider: MultiProvider,
-): Promise<Array<string>> {
-  const targetInfo = await Promise.all(
-    resolvedOrder.maxSpent.map(async ({ amount, chainId, token }) => {
-      const tokenAddress = bytes32ToAddress(token);
-
-      if (tokenAddress === AddressZero) {
-        const { nativeToken } = multiProvider.getChainMetadata(
-          chainId.toString(),
-        );
-
-        return {
-          amount,
-          chainId,
-          decimals: nativeToken?.decimals ?? 18,
-          symbol: nativeToken?.symbol ?? "ETH",
-        };
-      }
-
-      const erc20 = Erc20__factory.connect(
-        tokenAddress,
-        multiProvider.getProvider(chainId.toString()),
-      );
-      const [decimals, symbol] = await Promise.all([
-        erc20.decimals(),
-        erc20.symbol(),
-      ]);
-
-      return { amount, chainId, decimals, symbol };
-    }),
-  );
-
-  return targetInfo.map(({ amount, chainId, decimals, symbol }) => {
-    const destinationChain =
-      chainIdsToName[chainId.toNumber()] ?? "UNKNOWN_CHAIN";
-    return `${formatUnits(amount, decimals)} ${symbol} on ${destinationChain}`;
-  });
 }

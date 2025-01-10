@@ -1,5 +1,5 @@
 import {
-  AllowBlockLists,
+  type AllowBlockLists,
   AllowBlockListsSchema,
 } from "../../../config/types.js";
 

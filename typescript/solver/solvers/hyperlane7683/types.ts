@@ -27,6 +27,11 @@ export type ResolvedCrossChainOrder = Omit<
 
 export interface OpenEventArgs {
   orderId: string;
+  senderAddress: ResolvedCrossChainOrder["user"];
+  recipients: Array<{
+    destinationChainName: string;
+    recipientAddress: string;
+  }>;
   resolvedOrder: ResolvedCrossChainOrder;
 }
 

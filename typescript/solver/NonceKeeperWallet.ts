@@ -1,3 +1,4 @@
+import { defaultPath, HDNode } from "@ethersproject/hdnode";
 import type { Deferrable } from "@ethersproject/properties";
 import type {
   Provider,
@@ -5,6 +6,7 @@ import type {
   TransactionResponse,
 } from "@ethersproject/providers";
 import { Wallet } from "@ethersproject/wallet";
+import type { Wordlist } from "@ethersproject/wordlists";
 
 import { log } from "./logger.js";
 
@@ -34,5 +36,19 @@ export class NonceKeeperWallet extends Wallet {
     log.debug({ msg: "transaction", transaction });
 
     return super.sendTransaction(transaction);
+  }
+
+  static override fromMnemonic(
+    mnemonic: string,
+    path?: string,
+    wordlist?: Wordlist,
+  ) {
+    if (!path) {
+      path = defaultPath;
+    }
+
+    return new NonceKeeperWallet(
+      HDNode.fromMnemonic(mnemonic, undefined, wordlist).derivePath(path),
+    );
   }
 }

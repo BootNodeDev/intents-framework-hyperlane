@@ -1,5 +1,5 @@
-import z from "zod";
 import dotenvFlow from "dotenv-flow";
+import z from "zod";
 import allowBlockListsGlobal from "./allowBlockLists.js";
 import { chainMetadata } from "./chainMetadata.js";
 import { ConfigSchema } from "./types.js";
@@ -15,7 +15,7 @@ export { LOG_FORMAT, LOG_LEVEL, MNEMONIC, PRIVATE_KEY };
 
 type GenericAllowBlockListItem = z.infer<typeof ConfigSchema>;
 
-type GenericAllowBlockLists = {
+export type GenericAllowBlockLists = {
   allowList: GenericAllowBlockListItem[];
   blockList: GenericAllowBlockListItem[];
 };
@@ -69,16 +69,16 @@ const { chainIds, chainNames, chainIdsToName } = Object.entries(
   chainMetadata,
 ).reduce<{
   chainNames: Array<string>;
-  chainIds: { [key: string]: number | string };
+  chainIds: { [key: string]: number };
   chainIdsToName: { [key: string]: string };
 }>(
   (acc, [key, value]) => {
     acc.chainNames.push(key);
-    acc.chainIds[key] = value.chainId;
+    acc.chainIds[key] = Number(value.chainId);
     acc.chainIdsToName[value.chainId.toString()] = key;
     return acc;
   },
   { chainNames: [], chainIds: {}, chainIdsToName: {} },
 );
 
-export { chainIds, chainNames, chainIdsToName };
+export { chainIds, chainIdsToName, chainNames };
