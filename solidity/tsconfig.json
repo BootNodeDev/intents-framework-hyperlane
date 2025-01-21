@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "declarationMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": false,
+    "lib": [
+      "ES2015", "ES2016", "ES2017", "ES2018",
+      "ES2019", "ES2020","ES2021", "ES2022", "DOM"
+    ],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "preserveSymlinks": true,
+    "preserveWatchOutput": true,
+    "pretty": false,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2022",
+    "outDir": "./dist",
+    "rootDir": "./types"
+  },
+  "ts-node": {
+    "experimentalSpecifierResolution": "node",
+    "experimentalResolver": true,
+    "files": true
+  },
+  "exclude": ["./test", "hardhat.config.cts", "./dist"]
+}

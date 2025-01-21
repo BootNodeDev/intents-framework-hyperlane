@@ -1,5 +1,8 @@
 # directories
 cache
+cache_hardhat
+artifacts
+types
 coverage
 node_modules
 out

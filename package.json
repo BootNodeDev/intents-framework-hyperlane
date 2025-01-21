@@ -15,9 +15,16 @@
   },
   "homepage": "https://github.com/BootNodeDev/intents-framework#readme",
   "description": "",
-  "workspaces": [
-    "typescript/solver",
-    "solidity"
-  ],
+  "workspaces": {
+    "packages": [
+      "typescript/solver",
+      "solidity"
+    ],
+    "nohoist": [
+      "solidity/@hyperlane-xyz/core",
+      "solidity/@openzeppelin/contracts",
+      "solidity/@uniswap/permit2"
+    ]
+  },
   "packageManager": "yarn@4.5.1"
 }

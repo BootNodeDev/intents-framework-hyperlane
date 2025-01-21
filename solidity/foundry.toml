@@ -14,7 +14,8 @@
   solc = "0.8.25"
   src = "src"
   test = "test"
-  allow_paths = ["../node_modules"]
+  allow_paths = ["node_modules"]
+  libs = ['node_modules', '../node_modules']
 
 [profile.ci]
   fuzz = { runs = 10_000 }

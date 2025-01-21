@@ -1,0 +1,23 @@
+diff --git a/dist/codegen/createBarrelFiles.js b/dist/codegen/createBarrelFiles.js
+index 4bf574d7f6701bc5a8fcb2c281b5c63f31923e79..7f9cbdbd0491d4fa6338a10b23d06c2665c9d968 100644
+--- a/dist/codegen/createBarrelFiles.js
++++ b/dist/codegen/createBarrelFiles.js
+@@ -38,15 +38,13 @@ function createBarrelFiles(paths, { typeOnly, postfix = '', moduleSuffix = '' })
+         const namespacesExports = nestedDirs
+             .map((p) => {
+             const namespaceIdentifier = (0, normalizeDirName_1.normalizeDirName)(p);
++            const fromFilePath = moduleSuffix ? `'./${p}/index${moduleSuffix}'` : `'./${p}'`
+             if (typeOnly)
+                 return [
+-                    `import type * as ${namespaceIdentifier} from './${p}';`,
++                    `import type * as ${namespaceIdentifier} from ${fromFilePath};`,
+                     `export type { ${namespaceIdentifier} };`,
+                 ].join('\n');
+-            if (moduleSuffix) {
+-                return `export * as ${namespaceIdentifier} from './${p}/index${moduleSuffix}';`;
+-            }
+-            return `export * as ${namespaceIdentifier} from './${p}';`;
++            return `export * as ${namespaceIdentifier} from ${fromFilePath};`;
+         })
+             .join('\n');
+         const contracts = (fileReexports[path] || []).sort();

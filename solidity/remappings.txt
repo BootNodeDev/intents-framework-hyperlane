@@ -1,5 +1,5 @@
-@openzeppelin/=../node_modules/@openzeppelin/
-forge-std/=../node_modules/forge-std/src/
-@hyperlane-xyz/=../node_modules/@hyperlane-xyz/core/contracts/
-contracts/=../node_modules/@hyperlane-xyz/core/contracts/
-@uniswap/=../node_modules/@uniswap/
+@openzeppelin/=node_modules/@openzeppelin/
+forge-std/=node_modules/forge-std/src/
+@hyperlane-xyz/=node_modules/@hyperlane-xyz/core/contracts/
+contracts/=node_modules/@hyperlane-xyz/core/contracts/
+@uniswap/=node_modules/@uniswap/

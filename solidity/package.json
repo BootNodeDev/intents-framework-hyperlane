@@ -12,15 +12,44 @@
     "dotenv-run-script": "^0.4.1"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-foundry": "^1.1.3",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomiclabs/hardhat-ethers": "^2.2.3",
+    "@typechain/ethers-v5": "^11.1.2",
+    "@typechain/ethers-v6": "^0.5.1",
+    "@typechain/hardhat": "^9.1.0",
+    "@types/node": "^22.10.7",
+    "ethers": "^5.7.2",
     "forge-std": "github:foundry-rs/forge-std#v1.8.1",
+    "hardhat": "^2.22.18",
     "prettier": "^3.0.0",
-    "solhint": "^3.6.2"
+    "solhint": "^3.6.2",
+    "ts-generator": "^0.1.1",
+    "ts-node": "^10.8.0",
+    "tsx": "^4.19.1",
+    "typechain": "patch:typechain@npm%3A8.3.2#~/.yarn/patches/typechain-npm-8.3.2-b02e27439e.patch",
+    "typescript": "5.3.3"
   },
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./mailbox": "./dist/contracts/Mailbox.js",
+    "./buildArtifact.js": "./dist/buildArtifact.js",
+    "./buildArtifact.json": "./dist/buildArtifact.json",
+    "./contracts": "./contracts"
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "/dist",
+    "/contracts"
+  ],
   "keywords": [],
   "private": true,
   "scripts": {
-    "clean": "rm -rf cache out && forge clean",
-    "build": "forge build",
+    "clean": "yarn hardhat-esm clean && rm -rf ./dist ./cache ./types ./coverage ./out ./forge-cache ./fixtures && forge clean",
+    "build": "yarn hardhat-esm compile && tsc && ./exportBuildArtifact.sh",
+    "hardhat-esm": "NODE_OPTIONS='--experimental-loader ts-node/esm/transpile-only --no-warnings=ExperimentalWarning' hardhat --config hardhat.config.cts",
+    "forge:build": "forge build",
     "lint": "yarn lint:sol && yarn prettier:check",
     "lint:sol": "forge fmt --check && solhint \"{script,src,test}/**/*.sol\"",
     "sol:fmt": "forge fmt",
