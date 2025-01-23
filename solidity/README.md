@@ -55,6 +55,23 @@ implementations to create custom solutions. For example:
 This modular approach enables a high degree of flexibility, allowing developers to adapt the framework to various use
 cases and requirements.
 
+## Installation
+
+### NPM Package
+
+You can install the package via npm:
+
+```bash
+npm install intents-framework
+```
+
+The package includes:
+- TypeScript typings for all contracts
+- Contract ABIs
+- Compiled JavaScript files
+
+[![npm version](https://badge.fury.io/js/intents-framework.svg)](https://www.npmjs.com/package/intents-framework)
+
 ## Scripts
 
 ### Deploy
@@ -166,4 +183,3 @@ simply copy paste the path):
 
 ```sh
 $ yarn test:coverage:report
-```
