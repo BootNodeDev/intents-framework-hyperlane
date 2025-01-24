@@ -15,44 +15,55 @@ The solver directory contains the implementation of the Intent Solver, a TypeScr
 solver/
 ├── index.ts
 ├── logger.ts
+├── NonceKeeperWallet.ts
 ├── patch-bigint-buffer-warn.js
-├── solvers/
-│   ├── BaseListener.ts
-│   ├── eco/
-│   │   ├── listener.ts
-│   │   ├── filler.ts
-│   │   └── contracts/
-│   ├── onChain/
-│   │   ├── listener.ts
-│   │   ├── filler.ts
-│   │   └── contracts/
-│   └── index.ts
-├── types.ts
-├── package.json
-└── tsconfig.json
+├── test/
+├── config/
+│  ├── index.ts
+│  ├── allowBlockLists.ts
+│  ├── chainMetadata.ts
+│  └── types.ts
+└── solvers/
+    ├── index.ts
+    ├── BaseFiller.ts
+    ├── BaseListener.ts
+    ├── types.ts
+    ├── utils.ts
+    ├── contracts/
+    └── <eco|hyperlane7683>/
+        ├── index.ts
+        ├── listener.ts
+        ├── filler.ts
+        ├── types.ts
+        ├── utils.ts
+        ├── contracts/
+        └── config/
+            ├── index.ts
+            ├── metadata.ts
+            └── allowBlockLists.ts
 ```
 
 ### Description of Key Files and Directories
 
-- **index.ts**: The main entry point of the solver application. It initializes and starts the listeners and fillers for different solvers.
+- **solver/index.ts**: The main entry point of the solver application. It initializes and starts the listeners and fillers for different solvers.
 
 - **logger.ts**: Contains the Logger class used for logging messages with various formats and levels.
+
+- **NonceKeeperWallet.ts**: A class that extends ethers Wallet and prevents nonces race conditions when the solver needs to fill different intents (from different solutions) in the same network.
 
 - **patch-bigint-buffer-warn.js**: A script to suppress specific warnings related to BigInt and Buffer, ensuring cleaner console output.
 
 - **solvers/**: Contains implementations of different solvers and common utilities.
   - **BaseListener.ts**: An abstract base class that provides common functionality for event listeners. It handles setting up contract connections and defines the interface for parsing event arguments.
-  - **eco/**: Implements the solver for the ECO domain.
-    - **listener.ts**: Extends `BaseListener` to handle ECO-specific events.
-    - **filler.ts**: Processes ECO events and executes the required actions.
-    - **contracts/**: Contains contract ABI and type definitions for interacting with ECO contracts.
-  - **onChain/**: Implements the solver for on-chain events.
-    - **listener.ts**: Extends `BaseListener` to handle on-chain events.
-    - **filler.ts**: Processes on-chain events and executes the necessary actions.
-    - **contracts/**: Contains contract factories and types for on-chain contracts.
+  - **BaseFiller.ts**: An abstract base class that provides common functionality for fillers. It handles the solver's lifecycle `prepareIntent`, `fill`, and `settle`.
+    - **`prepareIntent`**: evaluate allow/block lists, balances, and run the defined rules to decide wether to fill or not an intent.
+    - **`fill`**: The actual filling.
+    - **`settle`**: The settlement step, can be avoided.
+  - **<eco|hyperlane7683>/**: Implements the solvers for the ECO and Hyperlane7683 domains.
+    - **listener.ts**: Extends `BaseListener` to handle domain-specific events.
+    - **filler.ts**: Extends `BaseFiller` to handle domain-specific intents.
+    - **contracts/**: Contains contract ABI and type definitions for interacting with domain-specific contracts.
   - **index.ts**: Exports the solvers to be used in the main application.
-
-- **types.ts**: Contains shared type definitions used across different solvers.
 
 ## Installation
 
@@ -119,6 +130,7 @@ const allowBlockLists: AllowBlockLists = {
   blockList: [],
 };
 ```
+
 as object of the following format:
 
 ```typescript
@@ -154,16 +166,16 @@ To integrate a new solver into the application, follow these steps:
 
    ```
    solvers/
-   ├── yourSolver/
-   │   ├── listener.ts
-   │   ├── filler.ts
-   │   └── contracts/
-   │       └── YourContract.json
+   └── yourSolver/
+       ├── listener.ts
+       ├── filler.ts
+       └── contracts/
+           └── YourContract.json
    ```
 
 2. **Implement the Listener**: In listener.ts, extend the `BaseListener` class and implement the required methods to handle your specific event.
 
-3. **Implement the Filler**: In filler.ts, write the logic to process events captured by your listener.
+3. **Implement the Filler**: In filler.ts, extend the `BaseFiller` class and implement the required logic to process events captured by your listener.
 
 4. **Add Contract Definitions**: Place your contract ABI and type definitions in the `contracts/` directory.
 
@@ -187,7 +199,7 @@ To integrate a new solver into the application, follow these steps:
    // ... existing code ...
 
    const yourSolverListener = solvers['yourSolver'].listener.create();
-   const yourSolverFiller = solvers['yourSolver'].filler.create();
+   const yourSolverFiller = solvers['yourSolver'].filler.create(multiProvider);
 
    yourSolverListener(yourSolverFiller);
    ```
