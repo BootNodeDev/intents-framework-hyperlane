@@ -1,7 +1,7 @@
 {
-  "name": "7683-router",
-  "description": "A reference ERC7683 implementation",
-  "version": "1.0.0",
+  "name": "@bootnodedev/intent-framework-core",
+  "description": "Core solidity contracts for the Intent Framework",
+  "version": "0.1.0",
   "author": {
     "name": "BootNode"
   },
@@ -44,9 +44,8 @@
     "/contracts"
   ],
   "keywords": [],
-  "private": true,
   "scripts": {
-    "clean": "yarn hardhat-esm clean && rm -rf ./dist ./cache ./types ./coverage ./out ./forge-cache ./fixtures && forge clean",
+    "clean": "yarn hardhat-esm clean && rm -rf ./dist ./cache ./cache_hardhat ./types ./coverage ./out ./forge-cache ./fixtures && forge clean",
     "build": "yarn hardhat-esm compile && tsc && ./exportBuildArtifact.sh",
     "hardhat-esm": "NODE_OPTIONS='--experimental-loader ts-node/esm/transpile-only --no-warnings=ExperimentalWarning' hardhat --config hardhat.config.cts",
     "forge:build": "forge build",

@@ -2,6 +2,7 @@
   "name": "solver",
   "type": "module",
   "version": "0.1.0",
+  "private": true,
   "scripts": {
     "solver": "node ./dist/index.js",
     "build": "tsc",

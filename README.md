@@ -62,6 +62,12 @@ docker exec -it <container-id> pm2 reload all
 
 For the versions available, see the tags on this repository.
 
+### Releasing packages to NPM
+
+We use [changesets](https://github.com/changesets/changesets) to release to NPM. You can use the `release` script in `package.json` to publish.
+
+Currently the only workspace being released as an NPM package is the one in `solidity`, which contains the contracts and typechain artifacts.
+
 ### License
 
 This project is licensed under the Apache 2.0 License - see the LICENSE.md file for details.
