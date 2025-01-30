@@ -1,5 +1,5 @@
 {
-  "name": "@bootnodedev/intent-framework-core",
+  "name": "@bootnodedev/intents-framework-core",
   "description": "Core solidity contracts for the Intent Framework",
   "version": "0.1.0",
   "author": {
