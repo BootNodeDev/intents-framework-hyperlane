@@ -44,6 +44,9 @@
     "/contracts"
   ],
   "keywords": [],
+  "installConfig": {
+    "hoistingLimits": "workspaces"
+  },
   "scripts": {
     "clean": "yarn hardhat-esm clean && rm -rf ./dist ./cache ./cache_hardhat ./types ./coverage ./out ./forge-cache ./fixtures && forge clean",
     "build": "yarn hardhat-esm compile && tsc && ./exportBuildArtifact.sh",
