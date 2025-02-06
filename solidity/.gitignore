@@ -9,6 +9,7 @@ out
 
 # files
 *.env
+*.env.testnet
 *.log
 .DS_Store
 .pnp.*

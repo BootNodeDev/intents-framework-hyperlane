@@ -22,14 +22,17 @@
   verbosity = 4
 
 [etherscan]
+  mainnet = { key = "${API_KEY_ETHERSCAN}" }
+  optimism = { key = "${API_KEY_OPTIMISTIC_ETHERSCAN}" }
   arbitrum = { key = "${API_KEY_ARBISCAN}" }
-  avalanche = { key = "${API_KEY_SNOWTRACE}" }
   base = { key = "${API_KEY_BASESCAN}" }
+  berachain = { key = "${API_KEY_BERACAHAINSCAN}", url = "https://api.routescan.io/v2/network/mainnet/evm/80094/etherscan/api/" }
+  form = { key = "${API_KEY_FORMSCAN}", url = "https://explorer.form.network/api" }
+
+  avalanche = { key = "${API_KEY_SNOWTRACE}" }
   bnb_smart_chain = { key = "${API_KEY_BSCSCAN}" }
   gnosis_chain = { key = "${API_KEY_GNOSISSCAN}" }
   goerli = { key = "${API_KEY_ETHERSCAN}" }
-  mainnet = { key = "${API_KEY_ETHERSCAN}" }
-  optimism = { key = "${API_KEY_OPTIMISTIC_ETHERSCAN}" }
   polygon = { key = "${API_KEY_POLYGONSCAN}" }
   sepolia = { key = "${API_KEY_ETHERSCAN}" }
 
@@ -44,14 +47,17 @@
   wrap_comments = true
 
 [rpc_endpoints]
-  mainnet = "https://eth-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
-  arbitrum = "https://arbitrum-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
-  avalanche = "https://avalanche-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
+  mainnet = "https://rpc.ankr.com/eth"
+  optimism = "https://mainnet.optimism.io"
+  arbitrum = "https://arbitrum.llamarpc.com"
   base = "https://mainnet.base.org"
+  berachain = "https://rpc.berachain.com"
+  form = "https://rpc.form.network/http"
+
+  avalanche = "https://avalanche-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   bnb_smart_chain = "https://bsc-dataseed.binance.org"
   gnosis_chain = "https://rpc.gnosischain.com"
   localhost = "http://localhost:8545"
-  optimism = "https://optimism-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   polygon = "https://polygon-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   optimism-sepolia = "https://opt-sepolia.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   arbitrum-sepolia = "https://arb-sepolia.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
