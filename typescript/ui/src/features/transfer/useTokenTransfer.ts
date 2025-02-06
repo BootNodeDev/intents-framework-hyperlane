@@ -1,3 +1,4 @@
+import { TransactionReceipt } from '@ethersproject/providers';
 import { TypedTransactionReceipt, WarpCore, WarpTxCategory } from '@hyperlane-xyz/sdk';
 import { toTitleCase, toWei } from '@hyperlane-xyz/utils';
 import {
@@ -13,6 +14,7 @@ import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
+import { checkOrderFilled } from '../tokens/balances';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
 import { TransferContext, TransferFormValues, TransferStatus } from './types';
 import { tryGetMsgIdFromTransferReceipt } from './utils';
@@ -166,9 +168,25 @@ async function executeTransfer({
       ? tryGetMsgIdFromTransferReceipt(multiProvider, origin, txReceipt)
       : undefined;
 
+    const orderId = (txReceipt?.receipt as TransactionReceipt)?.logs?.[2]?.topics?.[1];
+
+    const remoteTxHash = await checkOrderFilled({
+      destination,
+      transferIndex,
+      orderId,
+      originToken,
+      multiProvider,
+      updateTransferStatus,
+    }).catch((error) => {
+      logger.error('Error checking order filled', error);
+      return undefined;
+    });
+
     updateTransferStatus(transferIndex, (transferStatus = TransferStatus.ConfirmedTransfer), {
       originTxHash: hashes.at(-1),
       msgId,
+      orderId,
+      remoteTxHash,
     });
   } catch (error: any) {
     logger.error(`Error at stage ${transferStatus}`, error);
