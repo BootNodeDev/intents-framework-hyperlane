@@ -35,4 +35,6 @@ export interface TransferContext {
   originTxHash?: string;
   msgId?: string;
   timestamp: number;
+  orderId?: string;
+  remoteTxHash?: string;
 }
