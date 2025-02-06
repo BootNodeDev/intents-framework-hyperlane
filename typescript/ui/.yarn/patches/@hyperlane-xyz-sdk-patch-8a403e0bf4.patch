@@ -1,0 +1,13 @@
+diff --git a/dist/token/TokenStandard.js b/dist/token/TokenStandard.js
+index 78d7a5b1c3d64fb5d460ba173931a49a9581368a..f30139f1ec2fd93ba60fffeec02491a26620c95d 100644
+--- a/dist/token/TokenStandard.js
++++ b/dist/token/TokenStandard.js
+@@ -100,6 +100,8 @@ export const XERC20_STANDARDS = [
+ ];
+ export const MINT_LIMITED_STANDARDS = [...XERC20_STANDARDS];
+ export const TOKEN_HYP_STANDARDS = [
++    TokenStandard.Intent,
++    TokenStandard.IntentNative,
+     TokenStandard.EvmHypNative,
+     TokenStandard.EvmHypCollateral,
+     TokenStandard.EvmHypCollateralFiat,
