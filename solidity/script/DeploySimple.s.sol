@@ -28,6 +28,7 @@ contract DeploySimple is Script {
 
         uint256[] memory domains = vm.envUint("DOMAINS", ",");
         address[] memory routers = vm.envAddress("ROUTERS", ",");
+        assert(routers.length == domains.length);
         uint32[] memory _domains = new uint32[](domains.length);
         bytes32[] memory _routers = new bytes32[](domains.length);
         GasRouter.GasRouterConfig[] memory gasConfigs = new GasRouter.GasRouterConfig[](domains.length);
@@ -62,51 +63,23 @@ contract DeploySimple is Script {
     function deployProxyAdmin() internal returns (ProxyAdmin proxyAdmin) {
         string memory ROUTER_SALT = vm.envString("HYPERLANE7683_SALT");
         address proxyAdminOwner = vm.envAddress("PROXY_ADMIN_OWNER");
-        // proxyAdmin = new OwnableProxyAdmin{salt: keccak256(abi.encode(ROUTER_SALT))}(proxyAdminOwner);
+
         proxyAdmin = new OwnableProxyAdmin(proxyAdminOwner);
     }
 
     function deployImplementation() internal returns (address routerImpl) {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PK");
-        // address createX = vm.envAddress("CREATEX_ADDRESS");
         string memory ROUTER_SALT = vm.envString("HYPERLANE7683_SALT");
         address mailbox = vm.envAddress("MAILBOX");
         address permit2 = vm.envAddress("PERMIT2");
-        bytes32 salt = keccak256(abi.encodePacked("impl",ROUTER_SALT, vm.addr(deployerPrivateKey)));
 
-        // bytes memory routerCreation = type(Hyperlane7683).creationCode;
-        // bytes memory routerBytecode = abi.encodePacked(routerCreation, abi.encode(mailbox, permit2));
-
-        // return address(new Hyperlane7683{salt: salt}(mailbox, permit2));
         return address(new Hyperlane7683(mailbox, permit2));
-
-        // routerImpl = ICreateX(createX).deployCreate3(salt, routerBytecode);
     }
 
     function deployProxy(address routerImpl, address proxyAdmin) internal returns (TransparentUpgradeableProxy proxy) {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PK");
-        // address createX = vm.envAddress("CREATEX_ADDRESS");
         string memory ROUTER_SALT = vm.envString("HYPERLANE7683_SALT");
         address initialOwner = vm.addr(deployerPrivateKey);
-
-        bytes32 salt = keccak256(abi.encodePacked("proxy", ROUTER_SALT, vm.addr(deployerPrivateKey)));
-
-        // bytes memory proxyCreation = type(TransparentUpgradeableProxy).creationCode;
-        // bytes memory proxyBytecode = abi.encodePacked(proxyCreation, abi.encode(
-        //   routerImpl,
-        //   proxyAdmin,
-        //   abi.encodeWithSelector(Hyperlane7683.initialize.selector, address(0), address(0), owner)
-        // ));
-
-        // proxy = TransparentUpgradeableProxy(
-        //   payable(ICreateX(createX).deployCreate3(salt, proxyBytecode))
-        // );
-
-        // proxy = new TransparentUpgradeableProxy{salt: salt}(
-        //   routerImpl,
-        //   proxyAdmin,
-        //   abi.encodeWithSelector(Hyperlane7683.initialize.selector, address(0), address(0), owner)
-        // );
 
         proxy = new TransparentUpgradeableProxy(
           routerImpl,

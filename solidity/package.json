@@ -62,11 +62,13 @@
     "test:coverage:report": "forge coverage --no-match-coverage \"(test|mock|node_modules|script)\" --report lcov && genhtml lcov.info --ignore-errors inconsistent,inconsistent --branch-coverage --output-dir coverage",
     "deployHyperlane7683": "forge script script/DeployHyperlane7683.s.sol:DeployHyperlane7683 -f $NETWORK --broadcast --verify --slow -vvv",
     "run:deployHyperlane7683": "dotenv-run-script deployHyperlane7683",
-    "deploySimple": "forge script script/DeploySimple.s.sol:DeploySimple -f $NETWORK --slow -vvv",
+    "deploySimple": "forge script script/DeploySimple.s.sol:DeploySimple -f $NETWORK --broadcast --verify --slow -vvv",
     "run:deploySimple": "dotenv-run-script deploySimple",
     "deployToken": "forge script script/DeployToken.s.sol:DeployToken -f $NETWORK --broadcast --verify --slow -vvv",
     "run:deployToken": "dotenv-run-script deployToken",
     "openOrder": "forge script script/OpenOrder.s.sol:OpenOrder -f $NETWORK --broadcast --verify --slow -vvv",
-    "run:openOrder": "dotenv-run-script openOrder"
+    "run:openOrder": "dotenv-run-script openOrder",
+    "enrollMainnet": "forge script script/EnrollMainnet.s.sol:EnrollMainnet -f $NETWORK --broadcast --slow -vvv",
+    "run:enrollMainnet": "dotenv-run-script enrollMainnet"
   }
 }
