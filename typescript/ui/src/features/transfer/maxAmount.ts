@@ -38,7 +38,7 @@ async function fetchMaxAmount(
       destination,
       sender: address,
       senderPubKey: await publicKey,
-      topMax: 50e6,
+      topMax: 100e6,
     });
     return maxAmount;
   } catch (error) {

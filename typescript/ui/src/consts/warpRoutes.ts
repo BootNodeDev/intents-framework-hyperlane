@@ -2,12 +2,14 @@ import { type WarpCoreConfig } from '@hyperlane-xyz/sdk';
 
 const ROUTER = '0x9245A985d2055CeA7576B293Da8649bb6C5af9D0';
 const ROUTER_MAINNET = '0x5F69f9aeEB44e713fBFBeb136d712b22ce49eb88';
+
 const USDC_MAINNET = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const USDC_OP = "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85";
 const USDC_ARB = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 const USDC_BERA = "0x549943e04f40284185054145c6E4e9568C1D3241";
 const USDC_FORM = "0xFBf489bb4783D4B1B2e7D07ba39873Fb8068507D";
+const USDC_GNO = "0x2a22f9c3b484c3629090feed35f17ff8f88f76f0";
 
 // A list of Warp Route token configs
 // These configs will be merged with the warp routes in the configured registry
@@ -24,6 +26,7 @@ export const warpRouteConfigs: WarpCoreConfig = {
         {token: 'ethereum|base|' + USDC_BASE},
         {token: 'ethereum|berachain|' + USDC_BERA},
         {token: 'ethereum|form|' + USDC_FORM},
+        {token: 'ethereum|gnosis|' + USDC_GNO},
       ],
       decimals: 6,
       logoURI: '/deployments/warp_routes/USDC/logo.svg',
@@ -42,6 +45,7 @@ export const warpRouteConfigs: WarpCoreConfig = {
         {token: 'ethereum|base|' + USDC_BASE},
         {token: 'ethereum|berachain|' + USDC_BERA},
         {token: 'ethereum|form|' + USDC_FORM},
+        {token: 'ethereum|gnosis|' + USDC_GNO},
       ],
       decimals: 6,
       logoURI: '/deployments/warp_routes/USDC/logo.svg',
@@ -60,6 +64,7 @@ export const warpRouteConfigs: WarpCoreConfig = {
         {token: 'ethereum|base|' + USDC_BASE},
         {token: 'ethereum|berachain|' + USDC_BERA},
         {token: 'ethereum|form|' + USDC_FORM},
+        {token: 'ethereum|gnosis|' + USDC_GNO},
       ],
       decimals: 6,
       logoURI: '/deployments/warp_routes/USDC/logo.svg',
@@ -78,6 +83,7 @@ export const warpRouteConfigs: WarpCoreConfig = {
         {token: 'ethereum|arbitrum|' + USDC_ARB},
         {token: 'ethereum|berachain|' + USDC_BERA},
         {token: 'ethereum|form|' + USDC_FORM},
+        {token: 'ethereum|gnosis|' + USDC_GNO},
       ],
       decimals: 6,
       logoURI: '/deployments/warp_routes/USDC/logo.svg',
@@ -96,6 +102,7 @@ export const warpRouteConfigs: WarpCoreConfig = {
         {token: 'ethereum|arbitrum|' + USDC_ARB},
         {token: 'ethereum|base|' + USDC_BASE},
         {token: 'ethereum|berachain|' + USDC_BERA},
+        {token: 'ethereum|gnosis|' + USDC_GNO},
       ],
       decimals: 6,
       logoURI: '/deployments/warp_routes/USDC/logo.svg',
@@ -114,6 +121,26 @@ export const warpRouteConfigs: WarpCoreConfig = {
         {token: 'ethereum|arbitrum|' + USDC_ARB},
         {token: 'ethereum|base|' + USDC_BASE},
         {token: 'ethereum|form|' + USDC_FORM},
+        {token: 'ethereum|gnosis|' + USDC_GNO},
+      ],
+      decimals: 6,
+      logoURI: '/deployments/warp_routes/USDC/logo.svg',
+      name: 'USDC',
+      standard: 'Intent',
+      symbol: 'USDC',
+      protocol: 'ethereum',
+    },
+    {
+      addressOrDenom: USDC_GNO,
+      chainName: 'gnosis',
+      collateralAddressOrDenom: ROUTER,
+      connections: [
+        {token: 'ethereum|ethereum|' + USDC_MAINNET},
+        {token: 'ethereum|optimism|' + USDC_OP},
+        {token: 'ethereum|arbitrum|' + USDC_ARB},
+        {token: 'ethereum|base|' + USDC_BASE},
+        {token: 'ethereum|form|' + USDC_FORM},
+        {token: 'ethereum|berachain|' + USDC_BERA},
       ],
       decimals: 6,
       logoURI: '/deployments/warp_routes/USDC/logo.svg',
@@ -159,39 +186,51 @@ export const warpRouteConfigs: WarpCoreConfig = {
         addressOrDenom: USDC_FORM,
       },
       {
+        amount: 75e4,
+        origin: 'gnosis',
+        destination: 'ethereum',
+        addressOrDenom: USDC_GNO,
+      },
+      {
         amount: 35e4,
         origin: 'ethereum',
-        destination: 'optimism101010arbitrum101010base101010berachain101010form',
+        destination: 'optimism101010arbitrum101010base101010berachain101010form101010gnosis',
         addressOrDenom: USDC_MAINNET,
       },
       {
         amount: 5e4,
         origin: 'optimism',
-        destination: 'arbitrum101010base101010berachain101010form',
+        destination: 'arbitrum101010base101010berachain101010form101010gnosis',
         addressOrDenom: USDC_OP,
       },
       {
         amount: 5e4,
         origin: 'arbitrum',
-        destination: 'optimism101010base101010berachain101010form',
+        destination: 'optimism101010base101010berachain101010form101010gnosis',
         addressOrDenom: USDC_ARB,
       },
       {
         amount: 5e4,
         origin: 'base',
-        destination: 'optimism101010arbitrum101010berachain101010form',
+        destination: 'optimism101010arbitrum101010berachain101010form101010gnosis',
         addressOrDenom: USDC_BASE,
       },
       {
         amount: 5e4,
         origin: 'berachain',
-        destination: 'optimism101010arbitrum101010base101010form',
+        destination: 'optimism101010arbitrum101010base101010form101010gnosis',
         addressOrDenom: USDC_BERA,
       },
       {
         amount: 5e4,
         origin: 'form',
-        destination: 'optimism101010arbitrum101010base101010berachain',
+        destination: 'optimism101010arbitrum101010base101010berachain101010gnosis',
+        addressOrDenom: USDC_FORM,
+      },
+      {
+        amount: 5e4,
+        origin: 'gnosis',
+        destination: 'optimism101010arbitrum101010base101010berachain101010form',
         addressOrDenom: USDC_FORM,
       }
     ]

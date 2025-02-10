@@ -3865,13 +3865,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hyperlane-xyz/registry@npm:6.1.0":
-  version: 6.1.0
-  resolution: "@hyperlane-xyz/registry@npm:6.1.0"
+"@hyperlane-xyz/registry@npm:9.3.0":
+  version: 9.3.0
+  resolution: "@hyperlane-xyz/registry@npm:9.3.0"
   dependencies:
     yaml: "npm:2.4.5"
     zod: "npm:^3.21.2"
-  checksum: 10/a0e1ecc02d83604793ddda0a3e00a9ffcaa38b1cddf9883b47cf8f1919b4474abd6cc2ee84846e6a35e1bc7539299b9bec92bfdf06be72beecff6aa44b73d382
+  checksum: 10/22d34cf5b002b9bca751dbfcc5ba0ea1cb145b0f1e9394c9a6fa4b80d84cc0f9b8f1461c9aed902892b6d351cfd7aaf77484f0db531aa913e646086ac467e80f
   languageName: node
   linkType: hard
 
@@ -4119,7 +4119,7 @@ __metadata:
     "@ethersproject/abi": "npm:^5.7.0"
     "@ethersproject/providers": "npm:^5.7.2"
     "@headlessui/react": "npm:^2.2.0"
-    "@hyperlane-xyz/registry": "npm:6.1.0"
+    "@hyperlane-xyz/registry": "npm:9.3.0"
     "@hyperlane-xyz/sdk": "patch:@hyperlane-xyz/sdk@patch%3A@hyperlane-xyz/sdk@patch%253A@hyperlane-xyz/sdk@patch%25253A@hyperlane-xyz/sdk@patch%2525253A@hyperlane-xyz/sdk@patch%252525253A@hyperlane-xyz/sdk@npm%25252525253A7.2.0%2525252523~/.yarn/patches/@hyperlane-xyz-sdk-npm-7.2.0-84fab5b120.patch%252525253A%252525253Aversion=7.2.0&hash=2c784f%25252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-5a90f5762a.patch%2525253A%2525253Aversion=7.2.0&hash=bf6807%252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-ae53d49afa.patch%25253A%25253Aversion=7.2.0&hash=eacfdd%2523~/.yarn/patches/@hyperlane-xyz-sdk-patch-8a403e0bf4.patch%253A%253Aversion=7.2.0&hash=bfd92e%23~/.yarn/patches/@hyperlane-xyz-sdk-patch-0b3fa7b5c8.patch%3A%3Aversion=7.2.0&hash=7b0eb8#~/.yarn/patches/@hyperlane-xyz-sdk-patch-a33395c3b4.patch"
     "@hyperlane-xyz/utils": "npm:7.2.0"
     "@hyperlane-xyz/widgets": "npm:7.2.0"
