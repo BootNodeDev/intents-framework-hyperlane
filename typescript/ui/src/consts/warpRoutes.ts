@@ -1,9 +1,13 @@
 import { type WarpCoreConfig } from '@hyperlane-xyz/sdk';
-import { zeroAddress } from 'viem';
 
-// const ROUTER = '0x376dc8e71a223af488d885ce04a7021f32c2d1e0';
-const ROUTER = '0x6d2175B89315A9EB6c7eA71fDE54Ac0f294aDC34';
-const ITT = '0x5f94BC7Fb4A2779fef010F96b496cD36A909E818';
+const ROUTER = '0x9245A985d2055CeA7576B293Da8649bb6C5af9D0';
+const ROUTER_MAINNET = '0x5F69f9aeEB44e713fBFBeb136d712b22ce49eb88';
+const USDC_MAINNET = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const USDC_OP = "0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85";
+const USDC_ARB = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
+const USDC_BERA = "0x549943e04f40284185054145c6E4e9568C1D3241";
+const USDC_FORM = "0xFBf489bb4783D4B1B2e7D07ba39873Fb8068507D";
 
 // A list of Warp Route token configs
 // These configs will be merged with the warp routes in the configured registry
@@ -11,179 +15,111 @@ const ITT = '0x5f94BC7Fb4A2779fef010F96b496cD36A909E818';
 export const warpRouteConfigs: WarpCoreConfig = {
   tokens: [
     {
-      addressOrDenom: ITT,
-      chainName: 'optimismsepolia',
-      collateralAddressOrDenom: ROUTER,
+      addressOrDenom: USDC_MAINNET,
+      chainName: 'ethereum',
+      collateralAddressOrDenom: ROUTER_MAINNET,
       connections: [
-        {
-          token: 'ethereum|basesepolia|' + ITT,
-        },
-        {
-          token: 'ethereum|arbitrumsepolia|' + ITT,
-        },
-        {
-          token: 'ethereum|sepolia|' + ITT,
-        },
+        {token: 'ethereum|optimism|' + USDC_OP},
+        {token: 'ethereum|arbitrum|' + USDC_ARB},
+        {token: 'ethereum|base|' + USDC_BASE},
+        {token: 'ethereum|berachain|' + USDC_BERA},
+        {token: 'ethereum|form|' + USDC_FORM},
       ],
-      decimals: 18,
-      logoURI: '/deployments/warp_routes/ETH/logo.svg',
-      name: 'ITT',
+      decimals: 6,
+      logoURI: '/deployments/warp_routes/USDC/logo.svg',
+      name: 'USDC',
       standard: 'Intent',
-      symbol: 'ITT',
+      symbol: 'USDC',
       protocol: 'ethereum',
     },
     {
-      addressOrDenom: ITT,
-      chainName: 'basesepolia',
+      addressOrDenom: USDC_OP,
+      chainName: 'optimism',
       collateralAddressOrDenom: ROUTER,
       connections: [
-        {
-          token: 'ethereum|optimismsepolia|' + ITT,
-        },
-        {
-          token: 'ethereum|arbitrumsepolia|' + ITT,
-        },
-        {
-          token: 'ethereum|sepolia|' + ITT,
-        },
+        {token: 'ethereum|ethereum|' + USDC_MAINNET},
+        {token: 'ethereum|arbitrum|' + USDC_ARB},
+        {token: 'ethereum|base|' + USDC_BASE},
+        {token: 'ethereum|berachain|' + USDC_BERA},
+        {token: 'ethereum|form|' + USDC_FORM},
       ],
-      decimals: 18,
-      logoURI: '/deployments/warp_routes/ETH/logo.svg',
-      name: 'ITT',
+      decimals: 6,
+      logoURI: '/deployments/warp_routes/USDC/logo.svg',
+      name: 'USDC',
       standard: 'Intent',
-      symbol: 'ITT',
+      symbol: 'USDC',
       protocol: 'ethereum',
     },
     {
-      addressOrDenom: ITT,
-      chainName: 'arbitrumsepolia',
+      addressOrDenom: USDC_ARB,
+      chainName: 'arbitrum',
       collateralAddressOrDenom: ROUTER,
       connections: [
-        {
-          token: 'ethereum|optimismsepolia|' + ITT,
-        },
-        {
-          token: 'ethereum|basesepolia|' + ITT,
-        },
-        {
-          token: 'ethereum|sepolia|' + ITT,
-        },
+        {token: 'ethereum|ethereum|' + USDC_MAINNET},
+        {token: 'ethereum|optimism|' + USDC_OP},
+        {token: 'ethereum|base|' + USDC_BASE},
+        {token: 'ethereum|berachain|' + USDC_BERA},
+        {token: 'ethereum|form|' + USDC_FORM},
       ],
-      decimals: 18,
-      logoURI: '/deployments/warp_routes/ETH/logo.svg',
-      name: 'ITT',
+      decimals: 6,
+      logoURI: '/deployments/warp_routes/USDC/logo.svg',
+      name: 'USDC',
       standard: 'Intent',
-      symbol: 'ITT',
+      symbol: 'USDC',
       protocol: 'ethereum',
     },
     {
-      addressOrDenom: ITT,
-      chainName: 'sepolia',
+      addressOrDenom: USDC_BASE,
+      chainName: 'base',
       collateralAddressOrDenom: ROUTER,
       connections: [
-        {
-          token: 'ethereum|optimismsepolia|' + ITT,
-        },
-        {
-          token: 'ethereum|arbitrumsepolia|' + ITT,
-        },
-        {
-          token: 'ethereum|basesepolia|' + ITT,
-        },
+        {token: 'ethereum|ethereum|' + USDC_MAINNET},
+        {token: 'ethereum|optimism|' + USDC_OP},
+        {token: 'ethereum|arbitrum|' + USDC_ARB},
+        {token: 'ethereum|berachain|' + USDC_BERA},
+        {token: 'ethereum|form|' + USDC_FORM},
       ],
-      decimals: 18,
-      logoURI: '/deployments/warp_routes/ETH/logo.svg',
-      name: 'ITT',
+      decimals: 6,
+      logoURI: '/deployments/warp_routes/USDC/logo.svg',
+      name: 'USDC',
       standard: 'Intent',
-      symbol: 'ITT',
+      symbol: 'USDC',
       protocol: 'ethereum',
     },
     {
-      addressOrDenom: zeroAddress,
-      chainName: 'optimismsepolia',
+      addressOrDenom: USDC_FORM,
+      chainName: 'form',
       collateralAddressOrDenom: ROUTER,
       connections: [
-        {
-          token: 'ethereum|basesepolia|' + zeroAddress,
-        },
-        {
-          token: 'ethereum|arbitrumsepolia|' + zeroAddress,
-        },
-        {
-          token: 'ethereum|sepolia|' + zeroAddress,
-        },
+        {token: 'ethereum|ethereum|' + USDC_MAINNET},
+        {token: 'ethereum|optimism|' + USDC_OP},
+        {token: 'ethereum|arbitrum|' + USDC_ARB},
+        {token: 'ethereum|base|' + USDC_BASE},
+        {token: 'ethereum|berachain|' + USDC_BERA},
       ],
-      decimals: 18,
-      logoURI: '/deployments/warp_routes/ETH/logo.svg',
-      name: 'ETH',
-      standard: 'IntentNative',
-      symbol: 'ETH',
+      decimals: 6,
+      logoURI: '/deployments/warp_routes/USDC/logo.svg',
+      name: 'USDC',
+      standard: 'Intent',
+      symbol: 'USDC',
       protocol: 'ethereum',
     },
     {
-      addressOrDenom: zeroAddress,
-      chainName: 'basesepolia',
+      addressOrDenom: USDC_BERA,
+      chainName: 'berachain',
       collateralAddressOrDenom: ROUTER,
       connections: [
-        {
-          token: 'ethereum|optimismsepolia|' + zeroAddress,
-        },
-        {
-          token: 'ethereum|arbitrumsepolia|' + zeroAddress,
-        },
-        {
-          token: 'ethereum|sepolia|' + zeroAddress,
-        },
+        {token: 'ethereum|ethereum|' + USDC_MAINNET},
+        {token: 'ethereum|optimism|' + USDC_OP},
+        {token: 'ethereum|arbitrum|' + USDC_ARB},
+        {token: 'ethereum|base|' + USDC_BASE},
+        {token: 'ethereum|form|' + USDC_FORM},
       ],
-      decimals: 18,
-      logoURI: '/deployments/warp_routes/ETH/logo.svg',
-      name: 'ETH',
-      standard: 'IntentNative',
-      symbol: 'ETH',
-      protocol: 'ethereum',
-    },
-    {
-      addressOrDenom: zeroAddress,
-      chainName: 'arbitrumsepolia',
-      collateralAddressOrDenom: ROUTER,
-      connections: [
-        {
-          token: 'ethereum|optimismsepolia|' + zeroAddress,
-        },
-        {
-          token: 'ethereum|basesepolia|' + zeroAddress,
-        },
-        {
-          token: 'ethereum|sepolia|' + zeroAddress,
-        },
-      ],
-      decimals: 18,
-      logoURI: '/deployments/warp_routes/ETH/logo.svg',
-      name: 'ETH',
-      standard: 'IntentNative',
-      symbol: 'ETH',
-      protocol: 'ethereum',
-    },
-    {
-      addressOrDenom: zeroAddress,
-      chainName: 'sepolia',
-      collateralAddressOrDenom: ROUTER,
-      connections: [
-        {
-          token: 'ethereum|optimismsepolia|' + zeroAddress,
-        },
-        {
-          token: 'ethereum|arbitrumsepolia|' + zeroAddress,
-        },
-        {
-          token: 'ethereum|basesepolia|' + zeroAddress,
-        },
-      ],
-      decimals: 18,
-      logoURI: '/deployments/warp_routes/ETH/logo.svg',
-      name: 'ETH',
-      standard: 'IntentNative',
-      symbol: 'ETH',
+      decimals: 6,
+      logoURI: '/deployments/warp_routes/USDC/logo.svg',
+      name: 'USDC',
+      standard: 'Intent',
+      symbol: 'USDC',
       protocol: 'ethereum',
     },
   ],
@@ -193,16 +129,70 @@ export const warpRouteConfigs: WarpCoreConfig = {
     interchainFeeConstants: [
       // demo: amount == USDC in WEI
       {
-        amount: 10e18,
-        origin: 'optimismsepolia101010arbitrum101010base101010berachain101010form',
-        destination: 'ethereum101010basesepolia',
-        addressOrDenom: ITT,
+        amount: 75e4,
+        origin: 'optimism',
+        destination: 'ethereum',
+        addressOrDenom: USDC_OP,
       },
       {
-        amount: 5e5,
-        origin: 'ethereum101010optimism101010arbitrum101010base101010berachain101010form',
+        amount: 75e4,
+        origin: 'arbitrum',
+        destination: 'ethereum',
+        addressOrDenom: USDC_ARB,
+      },
+      {
+        amount: 75e4,
+        origin: 'base',
+        destination: 'ethereum',
+        addressOrDenom: USDC_BASE,
+      },
+      {
+        amount: 75e4,
+        origin: 'berachain',
+        destination: 'ethereum',
+        addressOrDenom: USDC_BERA,
+      },
+      {
+        amount: 75e4,
+        origin: 'form',
+        destination: 'ethereum',
+        addressOrDenom: USDC_FORM,
+      },
+      {
+        amount: 35e4,
+        origin: 'ethereum',
         destination: 'optimism101010arbitrum101010base101010berachain101010form',
-        addressOrDenom: ITT,
+        addressOrDenom: USDC_MAINNET,
+      },
+      {
+        amount: 5e4,
+        origin: 'optimism',
+        destination: 'arbitrum101010base101010berachain101010form',
+        addressOrDenom: USDC_OP,
+      },
+      {
+        amount: 5e4,
+        origin: 'arbitrum',
+        destination: 'optimism101010base101010berachain101010form',
+        addressOrDenom: USDC_ARB,
+      },
+      {
+        amount: 5e4,
+        origin: 'base',
+        destination: 'optimism101010arbitrum101010berachain101010form',
+        addressOrDenom: USDC_BASE,
+      },
+      {
+        amount: 5e4,
+        origin: 'berachain',
+        destination: 'optimism101010arbitrum101010base101010form',
+        addressOrDenom: USDC_BERA,
+      },
+      {
+        amount: 5e4,
+        origin: 'form',
+        destination: 'optimism101010arbitrum101010base101010berachain',
+        addressOrDenom: USDC_FORM,
       }
     ]
   },

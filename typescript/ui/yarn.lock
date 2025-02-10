@@ -4025,7 +4025,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@hyperlane-xyz/sdk@patch:@hyperlane-xyz/sdk@patch%3A@hyperlane-xyz/sdk@patch%253A@hyperlane-xyz/sdk@patch%25253A@hyperlane-xyz/sdk@patch%2525253A@hyperlane-xyz/sdk@npm%252525253A7.2.0%25252523~/.yarn/patches/@hyperlane-xyz-sdk-npm-7.2.0-84fab5b120.patch%2525253A%2525253Aversion=7.2.0&hash=2c784f%252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-5a90f5762a.patch%25253A%25253Aversion=7.2.0&hash=bf6807%2523~/.yarn/patches/@hyperlane-xyz-sdk-patch-ae53d49afa.patch%253A%253Aversion=7.2.0&hash=eacfdd%23~/.yarn/patches/@hyperlane-xyz-sdk-patch-8a403e0bf4.patch%3A%3Aversion=7.2.0&hash=bfd92e#~/.yarn/patches/@hyperlane-xyz-sdk-patch-0b3fa7b5c8.patch":
+"@hyperlane-xyz/sdk@patch:@hyperlane-xyz/sdk@patch%3A@hyperlane-xyz/sdk@patch%253A@hyperlane-xyz/sdk@patch%25253A@hyperlane-xyz/sdk@patch%2525253A@hyperlane-xyz/sdk@npm%252525253A7.2.0%25252523~/.yarn/patches/@hyperlane-xyz-sdk-npm-7.2.0-84fab5b120.patch%2525253A%2525253Aversion=7.2.0&hash=2c784f%252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-5a90f5762a.patch%25253A%25253Aversion=7.2.0&hash=bf6807%2523~/.yarn/patches/@hyperlane-xyz-sdk-patch-ae53d49afa.patch%253A%253Aversion=7.2.0&hash=eacfdd%23~/.yarn/patches/@hyperlane-xyz-sdk-patch-8a403e0bf4.patch%3A%3Aversion=7.2.0&hash=bfd92e#~/.yarn/patches/@hyperlane-xyz-sdk-patch-0b3fa7b5c8.patch::version=7.2.0&hash=7b0eb8":
   version: 7.2.0
   resolution: "@hyperlane-xyz/sdk@patch:@hyperlane-xyz/sdk@patch%3A@hyperlane-xyz/sdk@patch%253A@hyperlane-xyz/sdk@patch%25253A@hyperlane-xyz/sdk@patch%2525253A@hyperlane-xyz/sdk@npm%252525253A7.2.0%25252523~/.yarn/patches/@hyperlane-xyz-sdk-npm-7.2.0-84fab5b120.patch%2525253A%2525253Aversion=7.2.0&hash=2c784f%252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-5a90f5762a.patch%25253A%25253Aversion=7.2.0&hash=bf6807%2523~/.yarn/patches/@hyperlane-xyz-sdk-patch-ae53d49afa.patch%253A%253Aversion=7.2.0&hash=eacfdd%23~/.yarn/patches/@hyperlane-xyz-sdk-patch-8a403e0bf4.patch%3A%3Aversion=7.2.0&hash=bfd92e#~/.yarn/patches/@hyperlane-xyz-sdk-patch-0b3fa7b5c8.patch::version=7.2.0&hash=7b0eb8"
   dependencies:
@@ -4052,6 +4052,36 @@ __metadata:
     "@ethersproject/abi": "*"
     "@ethersproject/providers": "*"
   checksum: 10/ce4be4919b5cb735425095d46eefba74eebc1d04ffea0ab3f8e811a2359ff575828cdb618c82d09d6f0a4afbb634187b9327b74afb06f941184aee23902d11d1
+  languageName: node
+  linkType: hard
+
+"@hyperlane-xyz/sdk@patch:@hyperlane-xyz/sdk@patch%3A@hyperlane-xyz/sdk@patch%253A@hyperlane-xyz/sdk@patch%25253A@hyperlane-xyz/sdk@patch%2525253A@hyperlane-xyz/sdk@patch%252525253A@hyperlane-xyz/sdk@npm%25252525253A7.2.0%2525252523~/.yarn/patches/@hyperlane-xyz-sdk-npm-7.2.0-84fab5b120.patch%252525253A%252525253Aversion=7.2.0&hash=2c784f%25252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-5a90f5762a.patch%2525253A%2525253Aversion=7.2.0&hash=bf6807%252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-ae53d49afa.patch%25253A%25253Aversion=7.2.0&hash=eacfdd%2523~/.yarn/patches/@hyperlane-xyz-sdk-patch-8a403e0bf4.patch%253A%253Aversion=7.2.0&hash=bfd92e%23~/.yarn/patches/@hyperlane-xyz-sdk-patch-0b3fa7b5c8.patch%3A%3Aversion=7.2.0&hash=7b0eb8#~/.yarn/patches/@hyperlane-xyz-sdk-patch-a33395c3b4.patch":
+  version: 7.2.0
+  resolution: "@hyperlane-xyz/sdk@patch:@hyperlane-xyz/sdk@patch%3A@hyperlane-xyz/sdk@patch%253A@hyperlane-xyz/sdk@patch%25253A@hyperlane-xyz/sdk@patch%2525253A@hyperlane-xyz/sdk@patch%252525253A@hyperlane-xyz/sdk@npm%25252525253A7.2.0%2525252523~/.yarn/patches/@hyperlane-xyz-sdk-npm-7.2.0-84fab5b120.patch%252525253A%252525253Aversion=7.2.0&hash=2c784f%25252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-5a90f5762a.patch%2525253A%2525253Aversion=7.2.0&hash=bf6807%252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-ae53d49afa.patch%25253A%25253Aversion=7.2.0&hash=eacfdd%2523~/.yarn/patches/@hyperlane-xyz-sdk-patch-8a403e0bf4.patch%253A%253Aversion=7.2.0&hash=bfd92e%23~/.yarn/patches/@hyperlane-xyz-sdk-patch-0b3fa7b5c8.patch%3A%3Aversion=7.2.0&hash=7b0eb8#~/.yarn/patches/@hyperlane-xyz-sdk-patch-a33395c3b4.patch::version=7.2.0&hash=6593bd"
+  dependencies:
+    "@arbitrum/sdk": "npm:^4.0.0"
+    "@aws-sdk/client-s3": "npm:^3.577.0"
+    "@chain-registry/types": "npm:^0.50.14"
+    "@cosmjs/cosmwasm-stargate": "npm:^0.32.4"
+    "@cosmjs/stargate": "npm:^0.32.4"
+    "@hyperlane-xyz/core": "npm:5.8.2"
+    "@hyperlane-xyz/utils": "npm:7.2.0"
+    "@safe-global/api-kit": "npm:1.3.0"
+    "@safe-global/protocol-kit": "npm:1.3.0"
+    "@safe-global/safe-deployments": "npm:1.37.8"
+    "@solana/spl-token": "npm:^0.4.9"
+    "@solana/web3.js": "npm:^1.95.4"
+    bignumber.js: "npm:^9.1.1"
+    cosmjs-types: "npm:^0.9.0"
+    cross-fetch: "npm:^3.1.5"
+    ethers: "npm:^5.7.2"
+    pino: "npm:^8.19.0"
+    viem: "npm:^2.21.45"
+    zod: "npm:^3.21.2"
+  peerDependencies:
+    "@ethersproject/abi": "*"
+    "@ethersproject/providers": "*"
+  checksum: 10/04311604b320a0a0a068a8605291518522756c35045201d724aa6b7e7a96eeaa9a63b60a0ad91df5f77423e518c1bfa5a747ac22fadc6724edf2c741819386d5
   languageName: node
   linkType: hard
 
@@ -4090,7 +4120,7 @@ __metadata:
     "@ethersproject/providers": "npm:^5.7.2"
     "@headlessui/react": "npm:^2.2.0"
     "@hyperlane-xyz/registry": "npm:6.1.0"
-    "@hyperlane-xyz/sdk": "patch:@hyperlane-xyz/sdk@patch%3A@hyperlane-xyz/sdk@patch%253A@hyperlane-xyz/sdk@patch%25253A@hyperlane-xyz/sdk@patch%2525253A@hyperlane-xyz/sdk@npm%252525253A7.2.0%25252523~/.yarn/patches/@hyperlane-xyz-sdk-npm-7.2.0-84fab5b120.patch%2525253A%2525253Aversion=7.2.0&hash=2c784f%252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-5a90f5762a.patch%25253A%25253Aversion=7.2.0&hash=bf6807%2523~/.yarn/patches/@hyperlane-xyz-sdk-patch-ae53d49afa.patch%253A%253Aversion=7.2.0&hash=eacfdd%23~/.yarn/patches/@hyperlane-xyz-sdk-patch-8a403e0bf4.patch%3A%3Aversion=7.2.0&hash=bfd92e#~/.yarn/patches/@hyperlane-xyz-sdk-patch-0b3fa7b5c8.patch"
+    "@hyperlane-xyz/sdk": "patch:@hyperlane-xyz/sdk@patch%3A@hyperlane-xyz/sdk@patch%253A@hyperlane-xyz/sdk@patch%25253A@hyperlane-xyz/sdk@patch%2525253A@hyperlane-xyz/sdk@patch%252525253A@hyperlane-xyz/sdk@npm%25252525253A7.2.0%2525252523~/.yarn/patches/@hyperlane-xyz-sdk-npm-7.2.0-84fab5b120.patch%252525253A%252525253Aversion=7.2.0&hash=2c784f%25252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-5a90f5762a.patch%2525253A%2525253Aversion=7.2.0&hash=bf6807%252523~/.yarn/patches/@hyperlane-xyz-sdk-patch-ae53d49afa.patch%25253A%25253Aversion=7.2.0&hash=eacfdd%2523~/.yarn/patches/@hyperlane-xyz-sdk-patch-8a403e0bf4.patch%253A%253Aversion=7.2.0&hash=bfd92e%23~/.yarn/patches/@hyperlane-xyz-sdk-patch-0b3fa7b5c8.patch%3A%3Aversion=7.2.0&hash=7b0eb8#~/.yarn/patches/@hyperlane-xyz-sdk-patch-a33395c3b4.patch"
     "@hyperlane-xyz/utils": "npm:7.2.0"
     "@hyperlane-xyz/widgets": "npm:7.2.0"
     "@interchain-ui/react": "npm:^1.23.28"
