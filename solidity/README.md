@@ -55,6 +55,36 @@ implementations to create custom solutions. For example:
 This modular approach enables a high degree of flexibility, allowing developers to adapt the framework to various use
 cases and requirements.
 
+## Deployment Addresses
+
+### Mainnet
+  - Proxy: `0x5F69f9aeEB44e713fBFBeb136d712b22ce49eb88`
+  - Implementation: `0xF84c1bf6dC94f9DBdef81E61e974A6a8888263F9`
+
+### Optimism
+  - Proxy: `0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`
+  - Implementation: `0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BvEc`
+
+### Arbitrum
+  - Proxy: `0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`
+  - Implementation: `0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BvEc`
+
+### Base
+  - Proxy: `0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`
+  - Implementation: `0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BvEc`
+
+### Gnosis
+  - Proxy: `0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`
+  - Implementation: `0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BvEc`
+
+### Berachain
+  - Proxy: `0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`
+  - Implementation: `0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BvEc`
+
+### Form
+  - Proxy: `0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`
+  - Implementation: `0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BvEc`
+
 ## Scripts
 
 ### Deploy
