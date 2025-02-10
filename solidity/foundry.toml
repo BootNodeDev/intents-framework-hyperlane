@@ -49,14 +49,14 @@
 [rpc_endpoints]
   mainnet = "https://rpc.ankr.com/eth"
   optimism = "https://mainnet.optimism.io"
-  arbitrum = "https://arbitrum.llamarpc.com"
+  arbitrum = "https://arb1.arbitrum.io/rpc"
   base = "https://mainnet.base.org"
   berachain = "https://rpc.berachain.com"
   form = "https://rpc.form.network/http"
+  gnosis_chain = "https://rpc.gnosischain.com"
 
   avalanche = "https://avalanche-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   bnb_smart_chain = "https://bsc-dataseed.binance.org"
-  gnosis_chain = "https://rpc.gnosischain.com"
   localhost = "http://localhost:8545"
   polygon = "https://polygon-mainnet.g.alchemy.com/v2/${API_KEY_ALCHEMY}"
   optimism-sepolia = "https://opt-sepolia.g.alchemy.com/v2/${API_KEY_ALCHEMY}"

@@ -68,7 +68,7 @@
     "run:deployToken": "dotenv-run-script deployToken",
     "openOrder": "forge script script/OpenOrder.s.sol:OpenOrder -f $NETWORK --broadcast --verify --slow -vvv",
     "run:openOrder": "dotenv-run-script openOrder",
-    "enrollMainnet": "forge script script/EnrollMainnet.s.sol:EnrollMainnet -f $NETWORK --broadcast --slow -vvv",
-    "run:enrollMainnet": "dotenv-run-script enrollMainnet"
+    "enrollRouter": "forge script script/EnrollRouter.s.sol:EnrollRouter -f $NETWORK --broadcast --slow -vvv",
+    "run:enrollRouter": "dotenv-run-script enrollRouter"
   }
 }

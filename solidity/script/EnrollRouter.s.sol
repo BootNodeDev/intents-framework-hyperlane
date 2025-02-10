@@ -10,13 +10,17 @@ import { Hyperlane7683 } from "../src/Hyperlane7683.sol";
 
 
 /// @dev See the Solidity Scripting tutorial: https://book.getfoundry.sh/tutorials/solidity-scripting
-contract EnrollMainnet is Script {
+contract EnrollRouter is Script {
     function run() public {
         uint256 deployerPrivateKey = vm.envUint("OWNER_PK");
 
+        address localRouter = vm.envAddress("ROUTER");
+        address remoteRouter = vm.envAddress("REMOTE_ROUTER");
+        uint256 chainId = vm.envUint("ENROLL_CHAIN");
+
         vm.startBroadcast(deployerPrivateKey);
 
-        Hyperlane7683(0x9245A985d2055CeA7576B293Da8649bb6C5af9D0).enrollRemoteRouter(1, TypeCasts.addressToBytes32(0x5F69f9aeEB44e713fBFBeb136d712b22ce49eb88));
+        Hyperlane7683(localRouter).enrollRemoteRouter(uint32(chainId), TypeCasts.addressToBytes32(remoteRouter));
 
         vm.stopBroadcast();
     }
