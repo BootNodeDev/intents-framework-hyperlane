@@ -187,5 +187,23 @@ export const warpRouteConfigs: WarpCoreConfig = {
       protocol: 'ethereum',
     },
   ],
-  options: {},
+
+  // Mainnet Op Arb Base Bera Form
+  options: {
+    interchainFeeConstants: [
+      // demo: amount == USDC in WEI
+      {
+        amount: 10e18,
+        origin: 'optimismsepolia101010arbitrum101010base101010berachain101010form',
+        destination: 'ethereum101010basesepolia',
+        addressOrDenom: ITT,
+      },
+      {
+        amount: 5e5,
+        origin: 'ethereum101010optimism101010arbitrum101010base101010berachain101010form',
+        destination: 'optimism101010arbitrum101010base101010berachain101010form',
+        addressOrDenom: ITT,
+      }
+    ]
+  },
 };
