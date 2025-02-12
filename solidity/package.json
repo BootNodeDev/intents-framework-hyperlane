@@ -69,6 +69,8 @@
     "openOrder": "forge script script/OpenOrder.s.sol:OpenOrder -f $NETWORK --broadcast --verify --slow -vvv",
     "run:openOrder": "dotenv-run-script openOrder",
     "enrollRouter": "forge script script/EnrollRouter.s.sol:EnrollRouter -f $NETWORK --broadcast --slow -vvv",
-    "run:enrollRouter": "dotenv-run-script enrollRouter"
+    "run:enrollRouter": "dotenv-run-script enrollRouter",
+    "setDestinationGas": "forge script script/SetDestinationGas.s.sol:SetDestinationGas -f $NETWORK --broadcast --slow -vvv",
+    "run:setDestinationGas": "dotenv-run-script setDestinationGas"
   }
 }
