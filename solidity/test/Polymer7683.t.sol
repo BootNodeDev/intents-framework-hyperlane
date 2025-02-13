@@ -77,19 +77,19 @@ contract Polymer7683Test is Test {
     function _createSettlementProof(
         uint256 chainId,
         address emitter,
-        bytes32[] memory orderIds,
-        bytes[] memory fillerData
+        bytes32 orderId,
+        bytes memory fillerData
     ) internal returns (bytes memory) {
         // Concatenates all topics:
         // 1. Event signature (32 bytes)
         // 2. Indexed chainId (32 bytes)
         bytes memory topics = abi.encodePacked(
-            keccak256("BatchOrdersFilled(uint256,bytes32[],bytes[])"),
+            keccak256("OrderFilled(uint256,bytes32,bytes)"),
             bytes32(chainId)
         );
         
         // Non-indexed parameters go in data
-        bytes memory data = abi.encode(orderIds, fillerData);
+        bytes memory data = abi.encode(orderId, fillerData);
         
         prover.setExpectedEvent(
             uint32(chainId),
@@ -145,14 +145,12 @@ contract Polymer7683Test is Test {
         polymer7683.setDestinationContract(destChainId, destContract);
         
         // Prepare order data
-        bytes32[] memory orderIds = new bytes32[](1);
-        orderIds[0] = bytes32("orderId1");
-        bytes[] memory fillerData = new bytes[](1);
-        fillerData[0] = abi.encode(bytes32("filler1"));
+        bytes32 orderId = bytes32("orderId1");
+        bytes memory fillerData = abi.encode(bytes32("filler1"));
         
         // Create and submit proof
-        bytes memory proof = _createSettlementProof(destChainId, destContract, orderIds, fillerData);
-        polymer7683.handleSettlementWithProof(orderIds, proof, 0, destChainId);
+        bytes memory proof = _createSettlementProof(destChainId, destContract, orderId, fillerData);
+        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
         
         // Verify event is marked as processed
         bytes32 eventHash = keccak256(abi.encodePacked(proof, uint256(0), destChainId));
@@ -163,77 +161,71 @@ contract Polymer7683Test is Test {
         vm.prank(owner);
         polymer7683.setDestinationContract(destChainId, destContract);
         
-        bytes32[] memory orderIds = new bytes32[](1);
-        orderIds[0] = bytes32("orderId1");
-        bytes[] memory fillerData = new bytes[](1);
-        fillerData[0] = abi.encode(bytes32("filler1"));
+        bytes32 orderId = bytes32("orderId1");
+        bytes memory fillerData = abi.encode(bytes32("filler1"));
         
-        bytes memory proof = _createSettlementProof(destChainId, destContract, orderIds, fillerData);
+        bytes memory proof = _createSettlementProof(destChainId, destContract, orderId, fillerData);
         
         // First attempt should succeed
-        polymer7683.handleSettlementWithProof(orderIds, proof, 0, destChainId);
+        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
         
         // Second attempt should fail
         vm.expectRevert(Polymer7683.EventAlreadyProcessed.selector);
-        polymer7683.handleSettlementWithProof(orderIds, proof, 0, destChainId);
+        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
     }
 
     function test_handleSettlementWithProof_wrongChainId() public {
         vm.prank(owner);
         polymer7683.setDestinationContract(destChainId, destContract);
         
-        bytes32[] memory orderIds = new bytes32[](1);
-        orderIds[0] = bytes32("orderId1");
-        bytes[] memory fillerData = new bytes[](1);
-        fillerData[0] = abi.encode(bytes32("filler1"));
+        bytes32 orderId = bytes32("orderId1");
+        bytes memory fillerData = abi.encode(bytes32("filler1"));
         
         // Create proof for wrong chain ID
-        bytes memory proof = _createSettlementProof(999, destContract, orderIds, fillerData);
+        bytes memory proof = _createSettlementProof(999, destContract, orderId, fillerData);
         
         vm.expectRevert(Polymer7683.InvalidChainId.selector);
-        polymer7683.handleSettlementWithProof(orderIds, proof, 0, destChainId);
+        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
     }
 
     function test_handleSettlementWithProof_unregisteredDestination() public {
-        bytes32[] memory orderIds = new bytes32[](1);
-        orderIds[0] = bytes32("orderId1");
-        bytes[] memory fillerData = new bytes[](1);
-        fillerData[0] = abi.encode(bytes32("filler1"));
+        bytes32 orderId = bytes32("orderId1");
+        bytes memory fillerData = abi.encode(bytes32("filler1"));
         
-        bytes memory proof = _createSettlementProof(destChainId, destContract, orderIds, fillerData);
+        bytes memory proof = _createSettlementProof(destChainId, destContract, orderId, fillerData);
         
         vm.expectRevert(Polymer7683.UnregisteredDestinationChain.selector);
-        polymer7683.handleSettlementWithProof(orderIds, proof, 0, destChainId);
+        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
     }
 
-    function test_handleSettlementWithProof_invalidOrderIds() public {
+    function test_handleSettlementWithProof_invalidOrderId() public {
         vm.prank(owner);
         polymer7683.setDestinationContract(destChainId, destContract);
         
-        // Create proof for one set of order IDs
-        bytes32[] memory proofOrderIds = new bytes32[](1);
-        proofOrderIds[0] = bytes32("order1");
-        bytes[] memory fillerData = new bytes[](1);
-        fillerData[0] = abi.encode(bytes32("filler1"));
+        // Create proof for one order ID
+        bytes32 proofOrderId = bytes32("order1");
+        bytes memory fillerData = abi.encode(bytes32("filler1"));
         
-        bytes memory proof = _createSettlementProof(destChainId, destContract, proofOrderIds, fillerData);
+        bytes memory proof = _createSettlementProof(destChainId, destContract, proofOrderId, fillerData);
         
-        // Try to submit different order IDs
-        bytes32[] memory submittedOrderIds = new bytes32[](1);
-        submittedOrderIds[0] = bytes32("order2");
+        // Try to submit different order ID
+        bytes32 submittedOrderId = bytes32("order2");
         
         vm.expectRevert(Polymer7683.InvalidEventData.selector);
-        polymer7683.handleSettlementWithProof(submittedOrderIds, proof, 0, destChainId);
+        polymer7683.handleSettlementWithProof(submittedOrderId, proof, 0, destChainId);
     }
 
     function test_handleRefundWithProof_success() public {
         vm.prank(owner);
         polymer7683.setDestinationContract(destChainId, destContract);
         
-        bytes32[] memory orderIds = new bytes32[](1);
-        orderIds[0] = bytes32("orderId1");
+        bytes32 orderId = bytes32("orderId1");
         
-        bytes memory proof = _createRefundProof(destChainId, destContract, orderIds);
+        // Create a single-element array for the proof creation
+        bytes32[] memory orderIdsForProof = new bytes32[](1);
+        orderIdsForProof[0] = orderId;
+        
+        bytes memory proof = _createRefundProof(destChainId, destContract, orderIdsForProof);
         
         // Add more detailed debug logs
         (, , bytes memory topics, bytes memory eventData) = prover.validateEvent(proof);
@@ -241,10 +233,8 @@ contract Polymer7683Test is Test {
         console2.log("\nDecoding event data...");
         (bytes32[] memory decodedOrderIds, bytes[] memory decodedFillerData) = abi.decode(eventData, (bytes32[], bytes[]));
         
-        console2.log("Expected orderIds length:", orderIds.length);
-        console2.log("Decoded orderIds length:", decodedOrderIds.length);
         console2.log("Expected orderId:");
-        console2.logBytes32(orderIds[0]);
+        console2.logBytes32(orderId);
         console2.log("Decoded orderId:");
         console2.logBytes32(decodedOrderIds[0]);
         
@@ -259,7 +249,7 @@ contract Polymer7683Test is Test {
         // Log the chain ID being used
         console2.log("\nDestination chain ID:", destChainId);
         
-        try polymer7683.handleRefundWithProof(orderIds, proof, 0, destChainId) {
+        try polymer7683.handleRefundWithProof(orderId, proof, 0, destChainId) {
             console2.log("Refund successful");
         } catch Error(string memory reason) {
             console2.log("Refund failed with reason:", reason);
@@ -274,36 +264,13 @@ contract Polymer7683Test is Test {
         polymer7683.setDestinationContract(destChainId, destContract);
         
         address wrongContract = makeAddr("wrong");
-        bytes32[] memory orderIds = new bytes32[](1);
-        orderIds[0] = bytes32("orderId1");
-        bytes[] memory fillerData = new bytes[](1);
-        fillerData[0] = abi.encode(bytes32("filler1"));
+        bytes32 orderId = bytes32("orderId1");
+        bytes memory fillerData = abi.encode(bytes32("filler1"));
         
-        bytes memory proof = _createSettlementProof(destChainId, wrongContract, orderIds, fillerData);
+        bytes memory proof = _createSettlementProof(destChainId, wrongContract, orderId, fillerData);
         
         vm.expectRevert(Polymer7683.InvalidEmitter.selector);
-        polymer7683.handleSettlementWithProof(orderIds, proof, 0, destChainId);
-    }
-
-    function test_handleSettlementWithProof_multipleBatch() public {
-        vm.prank(owner);
-        polymer7683.setDestinationContract(destChainId, destContract);
-        
-        bytes32[] memory orderIds = new bytes32[](3);
-        orderIds[0] = bytes32("order1");
-        orderIds[1] = bytes32("order2");
-        orderIds[2] = bytes32("order3");
-        
-        bytes[] memory fillerData = new bytes[](3);
-        fillerData[0] = abi.encode(bytes32("filler1"));
-        fillerData[1] = abi.encode(bytes32("filler2"));
-        fillerData[2] = abi.encode(bytes32("filler3"));
-        
-        bytes memory proof = _createSettlementProof(destChainId, destContract, orderIds, fillerData);
-        polymer7683.handleSettlementWithProof(orderIds, proof, 0, destChainId);
-        
-        bytes32 eventHash = keccak256(abi.encodePacked(proof, uint256(0), destChainId));
-        assertTrue(polymer7683.processedEvents(eventHash));
+        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
     }
 
     function test_setDestinationContract_onlyOwner() public {

@@ -12,8 +12,6 @@ import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
  * @dev It integrates with the Polymer protocol for cross-chain event verification.
  */
 contract Polymer7683 is BasicSwap7683, Ownable {
-    // ============ Libraries ============
-
     // ============ Constants ============
     string public constant CLIENT_TYPE = "polymer"; // Used for proof verification
 
@@ -26,18 +24,6 @@ contract Polymer7683 is BasicSwap7683, Ownable {
     mapping(bytes32 eventHash => bool processed) public processedEvents;
 
     // ============ Events ============
-    /**
-     * @notice Event emitted when a batch of orders is filled on destination chain
-     * @param chainId The chain ID where this event was emitted
-     * @param orderIds The IDs of the orders being filled
-     * @param ordersFillerData The filler data for each order
-     */
-    event BatchOrdersFilled(
-        uint256 indexed chainId,
-        bytes32[] orderIds, 
-        bytes[] ordersFillerData
-    );
-
     /**
      * @notice Event emitted when a destination contract is updated
      * @param chainId The chain ID for the destination
@@ -80,12 +66,13 @@ contract Polymer7683 is BasicSwap7683, Ownable {
     // ============ External Functions ============
     /**
      * @notice Process a settlement proof from a destination chain
-     * @param orderIds The order IDs being settled
+     * @param orderId The order ID being settled
      * @param eventProof The proof of the Fill event from the destination chain
      * @param logIndex The index of the log in the receipt
+     * @param destinationChainId The chain ID where the fill occurred
      */
     function handleSettlementWithProof(
-        bytes32[] calldata orderIds,
+        bytes32 orderId,
         bytes calldata eventProof,
         uint256 logIndex,
         uint256 destinationChainId
@@ -115,28 +102,29 @@ contract Polymer7683 is BasicSwap7683, Ownable {
         if (processedEvents[eventHash]) revert EventAlreadyProcessed();
         processedEvents[eventHash] = true;
 
-        // 6. Parse the BatchOrdersFilled event data
-        (bytes32[] memory eventOrderIds, bytes[] memory ordersFillerData) = 
-            abi.decode(data, (bytes32[], bytes[]));
+        // 6. Parse the Filled event data
+        (
+            bytes32 eventOrderId,
+            bytes memory originData,
+            bytes memory fillerData
+        ) = abi.decode(data, (bytes32, bytes, bytes));
 
-        // 7. Validate order IDs match what was requested
-        if (orderIds.length != eventOrderIds.length) revert InvalidEventData();
-        for (uint256 i = 0; i < orderIds.length; i++) {
-            if (orderIds[i] != eventOrderIds[i]) revert InvalidEventData();
-            
-            // 8. Process settlement for each order
-            _handleSettleOrder(orderIds[i], abi.decode(ordersFillerData[i], (bytes32)));
-        }
+        // 7. Validate order ID matches
+        if (orderId != eventOrderId) revert InvalidEventData();
+        
+        // 8. Process settlement for the order
+        _handleSettleOrder(orderId, abi.decode(fillerData, (bytes32)));
     }
 
     /**
      * @notice Process a refund proof from a destination chain
-     * @param orderIds The order IDs being refunded
+     * @param orderId The order ID being refunded
      * @param eventProof The proof of the Refund event from the destination chain
      * @param logIndex The index of the log in the receipt
+     * @param destinationChainId The chain ID where the refund was initiated
      */
     function handleRefundWithProof(
-        bytes32[] calldata orderIds,
+        bytes32 orderId,
         bytes calldata eventProof,
         uint256 logIndex,
         uint256 destinationChainId
@@ -161,32 +149,32 @@ contract Polymer7683 is BasicSwap7683, Ownable {
         // 4. Validate the emitter matches our registered destination contract
         if (actualEmitter != expectedEmitter) revert InvalidEmitter();
 
-        // 4. Verify this event hasn't been processed before (prevent replay)
+        // 5. Verify this event hasn't been processed before (prevent replay)
         bytes32 eventHash = keccak256(abi.encodePacked(eventProof, logIndex, destinationChainId));
         if (processedEvents[eventHash]) revert EventAlreadyProcessed();
         processedEvents[eventHash] = true;
 
-        // 5. Parse the BatchOrdersFilled event data (with empty fillerData for refunds)
-        (bytes32[] memory eventOrderIds, bytes[] memory ordersFillerData) = 
-            abi.decode(data, (bytes32[], bytes[]));
+        // 6. Parse the Refund event data
+        bytes32[] memory eventOrderIds = abi.decode(data, (bytes32[]));
 
-        // 6. Verify that this is actually a refund event which is indicated by the empty filler data.
-        if (ordersFillerData.length != 0) revert InvalidEventData();
-
-        // 7. Validate order IDs match what was requested
-        if (orderIds.length != eventOrderIds.length) revert InvalidEventData();
-        for (uint256 i = 0; i < orderIds.length; i++) {
-            if (orderIds[i] != eventOrderIds[i]) revert InvalidEventData();
-        
-            // 8. Process refund for each order
-            _handleRefundOrder(orderIds[i]);
+        // 7. Validate order ID is in the refunded set
+        bool found = false;
+        for (uint256 i = 0; i < eventOrderIds.length; i++) {
+            if (eventOrderIds[i] == orderId) {
+                found = true;
+                break;
+            }
         }
+        if (!found) revert InvalidEventData();
+
+        // 8. Process refund for the order
+        _handleRefundOrder(orderId);
     }
 
     // ============ Internal Functions ============
 
     /**
-     * @notice Dispatches a settlement instruction by emitting an event that will be proven on the origin chain
+     * @notice Dispatches a settlement instruction by emitting a Filled event that will be proven on the origin chain
      * @param _originDomain The domain to which the settlement message is sent
      * @param _orderIds The IDs of the orders to settle
      * @param _ordersFillerData The filler data for the orders
@@ -196,11 +184,14 @@ contract Polymer7683 is BasicSwap7683, Ownable {
         bytes32[] memory _orderIds,
         bytes[] memory _ordersFillerData
     ) internal override {
-        emit BatchOrdersFilled(localChainId, _orderIds, _ordersFillerData);
+        for (uint256 i = 0; i < _orderIds.length; i++) {
+            FilledOrder memory order = filledOrders[_orderIds[i]];
+            emit Filled(_orderIds[i], order.originData, order.fillerData);
+        }
     }
 
     /**
-     * @notice Dispatches a refund instruction by emitting an event that will be proven on the origin chain
+     * @notice Dispatches a refund instruction by emitting a Refund event that will be proven on the origin chain
      * @param _originDomain The domain to which the refund message is sent
      * @param _orderIds The IDs of the orders to refund
      */
@@ -208,7 +199,7 @@ contract Polymer7683 is BasicSwap7683, Ownable {
         uint32 _originDomain,
         bytes32[] memory _orderIds
     ) internal override {
-        emit BatchOrdersFilled(localChainId, _orderIds, new bytes[](0));
+        emit Refund(_orderIds);
     }
 
     /**
