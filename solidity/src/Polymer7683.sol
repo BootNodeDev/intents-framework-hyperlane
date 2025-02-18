@@ -80,7 +80,7 @@ contract Polymer7683 is BasicSwap7683, Ownable {
         // 2. Verify event using Polymer prover
         (
             bytes32 eventOrderId,
-            bytes memory originData,
+            , // originData
             bytes memory fillerData
         ) = _validateSettlementProof(eventProof);
 

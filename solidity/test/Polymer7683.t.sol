@@ -213,11 +213,6 @@ contract Polymer7683Test is Test {
                 console2.logBytes4(selector);
             }
         }
-   
-        /* // Verify event is marked as processed */
-        /* bytes32 eventHash = keccak256(abi.encodePacked(proof, uint256(0), destChainId)); */
-        /* console2.log("\nChecking if event is processed:"); */
-        /* console2.log(polymer7683.processedEvents(eventHash)); */
     }
 
     function test_handleSettlementWithProof_preventReplay() public {
@@ -253,7 +248,7 @@ contract Polymer7683Test is Test {
         // Create proof for wrong chain ID
         bytes memory proof = _createSettlementProof(999, destContract, orderId, fillerData);
         
-        vm.expectRevert(Polymer7683.InvalidChainId.selector);
+        vm.expectRevert(Polymer7683.UnregisteredDestinationChain.selector);
         polymer7683.handleSettlementWithProof(orderId, proof);
     }
 
