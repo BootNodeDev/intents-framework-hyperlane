@@ -159,18 +159,24 @@ contract Polymer7683Test is Test {
     function test_handleSettlementWithProof_preventReplay() public {
         vm.prank(owner);
         polymer7683.setDestinationContract(destChainId, destContract);
-        
+    
         bytes32 orderId = bytes32("orderId1");
-        bytes memory fillerData = abi.encode(bytes32("filler1"));
-        
-        bytes memory proof = _createSettlementProof(destChainId, destContract, orderId, fillerData);
-        
-        // First attempt should succeed
-        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
-        
-        // Second attempt should fail
+    
+        // Create array with single orderId for proof
+        bytes32[] memory orderIds = new bytes32[](1);
+        orderIds[0] = orderId;
+    
+        bytes memory proof = _createRefundProof(destChainId, destContract, orderIds);
+    
+        console2.log("First attempt...");
+        polymer7683.handleRefundWithProof(orderId, proof, 0, destChainId);
+    
+        console2.log("\nChecking if order is marked as processed:");
+        console2.log(polymer7683.processedEvents(orderId));
+    
+        console2.log("\nSecond attempt...");
         vm.expectRevert(Polymer7683.EventAlreadyProcessed.selector);
-        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
+        polymer7683.handleRefundWithProof(orderId, proof, 0, destChainId);
     }
 
     function test_handleSettlementWithProof_wrongChainId() public {

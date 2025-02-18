@@ -133,11 +133,15 @@ contract Polymer7683 is BasicSwap7683, Ownable {
         uint256 logIndex,
         uint256 destinationChainId
     ) external {
-        // 1. Verify the destination contract is registered
+        // 1. Use orderId for replay protection
+        if (processedEvents[orderId]) revert EventAlreadyProcessed();
+        processedEvents[orderId] = true;
+
+        // 2. Verify the destination contract is registered
         address expectedEmitter = destinationContracts[destinationChainId];
         if (expectedEmitter == address(0)) revert UnregisteredDestinationChain();
 
-        // 2. Verify event using Polymer prover
+        // 3. Verify event using Polymer prover
         (
             uint32 chainId,
             address actualEmitter,
@@ -145,18 +149,13 @@ contract Polymer7683 is BasicSwap7683, Ownable {
             bytes memory data
         ) = prover.validateEvent(eventProof);
 
-        // 3. Validate the chain ID matches our expected destination chain
+        // 4. Validate the chain ID matches our expected destination chain
         if (chainId != destinationChainId) {
             revert InvalidChainId();
         }
 
-        // 4. Validate the emitter matches our registered destination contract
+        // 5. Validate the emitter matches our registered destination contract
         if (actualEmitter != expectedEmitter) revert InvalidEmitter();
-
-        // 5. Verify this event hasn't been processed before (prevent replay)
-        bytes32 eventHash = keccak256(abi.encodePacked(eventProof, logIndex, destinationChainId));
-        if (processedEvents[eventHash]) revert EventAlreadyProcessed();
-        processedEvents[eventHash] = true;
 
         // 6. Parse the Refund event data
         bytes32[] memory eventOrderIds = abi.decode(data, (bytes32[]));
