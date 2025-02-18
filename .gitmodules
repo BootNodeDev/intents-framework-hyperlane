@@ -1,6 +1,0 @@
-[submodule "solidity/lib/prover-contracts"]
-	path = solidity/lib/prover-contracts
-	url = https://github.com/polymerdao/prover-contracts
-[submodule "solidity/lib/optimism"]
-	path = solidity/lib/optimism
-	url = https://github.com/ethereum-optimism/optimism

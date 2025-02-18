@@ -3,6 +3,5 @@ forge-std/=node_modules/forge-std/src/
 @hyperlane-xyz/=node_modules/@hyperlane-xyz/core/contracts/
 contracts/=node_modules/@hyperlane-xyz/core/contracts/
 @uniswap/=node_modules/@uniswap/
-@polymerdao/prover-contracts=lib/prover-contracts/contracts/
-optimism/=lib/optimism/packages/contracts-bedrock/src/
+@polymerdao/prover-contracts=node_modules/@polymerdao/prover-contracts/contracts/
 
