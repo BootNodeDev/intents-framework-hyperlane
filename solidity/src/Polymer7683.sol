@@ -2,6 +2,7 @@
 pragma solidity 0.8.25;
 
 import { ICrossL2ProverV2 } from "@polymerdao/prover-contracts/interfaces/ICrossL2ProverV2.sol";
+import { OrderData, OrderEncoder } from "./libs/OrderEncoder.sol";
 import { BasicSwap7683 } from "./BasicSwap7683.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -77,42 +78,45 @@ contract Polymer7683 is BasicSwap7683, Ownable {
         uint256 logIndex,
         uint256 destinationChainId
     ) external {
-        // 1. Verify the destination contract is registered
-        address expectedEmitter = destinationContracts[destinationChainId];
-        if (expectedEmitter == address(0)) revert UnregisteredDestinationChain();
-
-        // 2. Verify event using Polymer prover
+        // 1. Verify event using Polymer prover
         (
-            uint32 chainId,
+            uint32 provenChainId,
             address actualEmitter,
             bytes memory topics,
             bytes memory data
         ) = prover.validateEvent(eventProof);
 
-        // 3. Validate the chain ID matches our expected destination chain
-        if (chainId != destinationChainId) {
+        // 2. Decode the Filled event data
+        (
+         bytes32 eventOrderId,
+         bytes memory originData,
+         bytes memory fillerData
+        ) = abi.decode(data, (bytes32, bytes, bytes));
+
+        // 3. Decode the original order data to get expected destination chain
+        OrderData memory orderData = OrderEncoder.decode(originData);
+
+        // 4. Validate the proven chain ID matches the order's intended destination
+        if (provenChainId != orderData.destinationDomain) {
             revert InvalidChainId();
         }
 
-        // 4. Validate the emitter matches our registered destination contract
+        // 5. Verify the destination contract is registered
+        address expectedEmitter = destinationContracts[destinationChainId];
+        if (expectedEmitter == address(0)) revert UnregisteredDestinationChain();
+
+        // 6. Validate the emitter matches our registered destination contract
         if (actualEmitter != expectedEmitter) revert InvalidEmitter();
 
-        // 5. Verify this event hasn't been processed before (prevent replay)
+        // 7. Verify this event hasn't been processed before (prevent replay)
         bytes32 eventHash = keccak256(abi.encodePacked(eventProof, logIndex, destinationChainId));
         if (processedEvents[eventHash]) revert EventAlreadyProcessed();
         processedEvents[eventHash] = true;
 
-        // 6. Parse the Filled event data
-        (
-            bytes32 eventOrderId,
-            bytes memory originData,
-            bytes memory fillerData
-        ) = abi.decode(data, (bytes32, bytes, bytes));
-
-        // 7. Validate order ID matches
+        // 8. Validate order ID matches
         if (orderId != eventOrderId) revert InvalidEventData();
         
-        // 8. Process settlement for the order
+        // 9. Process settlement for the order
         _handleSettleOrder(orderId, abi.decode(fillerData, (bytes32)));
     }
 
