@@ -200,9 +200,8 @@ contract Polymer7683Test is Test {
         console2.log("Filler Data length:", decodedFillerData.length);
 
         console2.log("\nSubmitting settlement proof...");
-        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
 
-        try polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId) {
+        try polymer7683.handleSettlementWithProof(orderId, proof) {
             console2.log("\nCall succeeded");
         } catch Error(string memory reason) {
             console2.log("\nReverted with reason:", reason);
@@ -234,14 +233,14 @@ contract Polymer7683Test is Test {
         bytes memory proof = _createRefundProof(destChainId, destContract, orderIds);
     
         console2.log("First attempt...");
-        polymer7683.handleRefundWithProof(orderId, proof, 0, destChainId);
+        polymer7683.handleRefundWithProof(orderId, proof);
     
         console2.log("\nChecking if order is marked as processed:");
         console2.log(polymer7683.processedEvents(orderId));
     
         console2.log("\nSecond attempt...");
         vm.expectRevert(Polymer7683.EventAlreadyProcessed.selector);
-        polymer7683.handleRefundWithProof(orderId, proof, 0, destChainId);
+        polymer7683.handleRefundWithProof(orderId, proof);
     }
 
     function test_handleSettlementWithProof_wrongChainId() public {
@@ -255,7 +254,7 @@ contract Polymer7683Test is Test {
         bytes memory proof = _createSettlementProof(999, destContract, orderId, fillerData);
         
         vm.expectRevert(Polymer7683.InvalidChainId.selector);
-        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
+        polymer7683.handleSettlementWithProof(orderId, proof);
     }
 
     function test_handleSettlementWithProof_unregisteredDestination() public {
@@ -265,7 +264,7 @@ contract Polymer7683Test is Test {
         bytes memory proof = _createSettlementProof(destChainId, destContract, orderId, fillerData);
         
         vm.expectRevert(Polymer7683.UnregisteredDestinationChain.selector);
-        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
+        polymer7683.handleSettlementWithProof(orderId, proof);
     }
 
     function test_handleSettlementWithProof_invalidOrderId() public {
@@ -301,7 +300,7 @@ contract Polymer7683Test is Test {
         bytes32 submittedOrderId = bytes32("order2");
         
         vm.expectRevert(Polymer7683.InvalidEventData.selector);
-        try polymer7683.handleSettlementWithProof(submittedOrderId, proof, 0, destChainId) {
+        try polymer7683.handleSettlementWithProof(submittedOrderId, proof) {
             console2.log("Call succeeded unexpectedly");
         } catch Error(string memory reason) {
             console2.log("Reverted with reason:", reason);
@@ -349,7 +348,7 @@ contract Polymer7683Test is Test {
         // Log the chain ID being used
         console2.log("\nDestination chain ID:", destChainId);
         
-        try polymer7683.handleRefundWithProof(orderId, proof, 0, destChainId) {
+        try polymer7683.handleRefundWithProof(orderId, proof) {
             console2.log("Refund successful");
         } catch Error(string memory reason) {
             console2.log("Refund failed with reason:", reason);
@@ -370,7 +369,7 @@ contract Polymer7683Test is Test {
         bytes memory proof = _createSettlementProof(destChainId, wrongContract, orderId, fillerData);
         
         vm.expectRevert(Polymer7683.InvalidEmitter.selector);
-        polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
+        polymer7683.handleSettlementWithProof(orderId, proof);
     }
 
     function test_setDestinationContract_onlyOwner() public {

@@ -69,14 +69,10 @@ contract Polymer7683 is BasicSwap7683, Ownable {
      * @notice Process a settlement proof from a destination chain
      * @param orderId The order ID being settled
      * @param eventProof The proof of the Fill event from the destination chain
-     * @param logIndex The index of the log in the receipt
-     * @param destinationChainId The chain ID where the fill occurred
      */
     function handleSettlementWithProof(
         bytes32 orderId,
-        bytes calldata eventProof,
-        uint256 logIndex,
-        uint256 destinationChainId
+        bytes calldata eventProof
     ) external {
         // 1. Check if order already processed
         if (processedEvents[orderId]) revert EventAlreadyProcessed();
@@ -86,7 +82,7 @@ contract Polymer7683 is BasicSwap7683, Ownable {
             bytes32 eventOrderId,
             bytes memory originData,
             bytes memory fillerData
-        ) = _validateSettlementProof(eventProof, destinationChainId);
+        ) = _validateSettlementProof(eventProof);
 
         // 3. Validate order ID matches
         if (orderId != eventOrderId) revert InvalidEventData();
@@ -102,20 +98,16 @@ contract Polymer7683 is BasicSwap7683, Ownable {
      * @notice Process a refund proof from a destination chain
      * @param orderId The order ID being refunded
      * @param eventProof The proof of the Refund event from the destination chain
-     * @param logIndex The index of the log in the receipt
-     * @param destinationChainId The chain ID where the refund was initiated
      */
     function handleRefundWithProof(
         bytes32 orderId,
-        bytes calldata eventProof,
-        uint256 logIndex,
-        uint256 destinationChainId
+        bytes calldata eventProof
     ) external {
         // 1. Use orderId for replay protection
         if (processedEvents[orderId]) revert EventAlreadyProcessed();
 
         // 2. Validate order ID is in the refunded set
-        bytes32[] memory eventOrderIds = _validateRefundProof(eventProof, destinationChainId);
+        bytes32[] memory eventOrderIds = _validateRefundProof(eventProof);
         bool found = false;
         for (uint256 i = 0; i < eventOrderIds.length; i++) {
             if (eventOrderIds[i] == orderId) {
@@ -170,8 +162,7 @@ contract Polymer7683 is BasicSwap7683, Ownable {
     }
 
     function _validateSettlementProof(
-        bytes calldata eventProof,
-        uint256 destinationChainId
+        bytes calldata eventProof
     ) private view returns (
         bytes32 eventOrderId,
         bytes memory originData,
@@ -182,7 +173,7 @@ contract Polymer7683 is BasicSwap7683, Ownable {
             address actualEmitter,
             ,  // topics
             bytes memory data
-        ) = _validateCommonProof(eventProof, destinationChainId);
+        ) = prover.validateEvent(eventProof);
 
         // Decode settlement-specific data
         (eventOrderId, originData, fillerData) = abi.decode(data, (bytes32, bytes, bytes));
@@ -192,49 +183,26 @@ contract Polymer7683 is BasicSwap7683, Ownable {
         if (provenChainId != orderData.destinationDomain) {
             revert InvalidChainId();
         }
+
+        // Verify destination contract is registered for the proven chain
+        address expectedEmitter = destinationContracts[provenChainId];
+        if (expectedEmitter == address(0)) revert UnregisteredDestinationChain();
+
+        // Validate emitter matches registered destination
+        if (actualEmitter != expectedEmitter) revert InvalidEmitter();
     }
 
     function _validateRefundProof(
-        bytes calldata eventProof,
-        uint256 destinationChainId
+        bytes calldata eventProof
     ) private view returns (bytes32[] memory eventOrderIds) {
         (
             uint32 provenChainId,
             ,  // actualEmitter
             ,  // topics
             bytes memory data
-        ) = _validateCommonProof(eventProof, destinationChainId);
+        ) = prover.validateEvent(eventProof);
 
         // Decode refund-specific data
         eventOrderIds = abi.decode(data, (bytes32[]));
-
-        // For refunds, we directly check against destination chain
-        if (provenChainId != destinationChainId) {
-            revert InvalidChainId();
-        }
-    }
-
-    function _validateCommonProof(
-        bytes calldata eventProof,
-        uint256 destinationChainId
-    ) private view returns (
-        uint32 provenChainId,
-        address actualEmitter,
-        bytes memory topics,
-        bytes memory data
-    ) {
-        (
-            provenChainId,
-            actualEmitter,
-            topics,
-            data
-        ) = prover.validateEvent(eventProof);
-
-        // Verify destination contract is registered
-        address expectedEmitter = destinationContracts[destinationChainId];
-        if (expectedEmitter == address(0)) revert UnregisteredDestinationChain();
-
-        // Validate emitter matches registered destination
-        if (actualEmitter != expectedEmitter) revert InvalidEmitter();
     }
 }
