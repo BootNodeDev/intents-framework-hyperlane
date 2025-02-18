@@ -80,25 +80,24 @@ contract Polymer7683Test is Test {
         bytes32 orderId,
         bytes memory fillerData
     ) internal returns (bytes memory) {
-        // Concatenates all topics:
-        // 1. Event signature (32 bytes)
-        // 2. Indexed chainId (32 bytes)
         bytes memory topics = abi.encodePacked(
-            keccak256("OrderFilled(uint256,bytes32,bytes)"),
+            keccak256("Filled(bytes32,bytes,bytes)"),
             bytes32(chainId)
         );
-        
-        // Non-indexed parameters go in data
-        bytes memory data = abi.encode(orderId, fillerData);
-        
+    
+        // Create dummy origin data
+        bytes memory originData = "dummyOriginData";
+    
+        // Include all three expected parameters
+        bytes memory data = abi.encode(orderId, originData, fillerData);
+    
         prover.setExpectedEvent(
-            uint32(chainId),
-            emitter,
-            topics,
-            data
+           uint32(chainId),
+           emitter,
+           topics,
+           data
         );
-        
-        // Return dummy proof bytes that will be validated by our mock prover
+    
         return "dummy_proof";
     }
 
@@ -205,14 +204,44 @@ contract Polymer7683Test is Test {
         // Create proof for one order ID
         bytes32 proofOrderId = bytes32("order1");
         bytes memory fillerData = abi.encode(bytes32("filler1"));
+
+        console2.log("\nTest setup:");
+        console2.log("Proof Order ID:");
+        console2.logBytes32(proofOrderId);
+        console2.log("Submitted Order ID:");
+        console2.logBytes32(bytes32("order2"));
         
         bytes memory proof = _createSettlementProof(destChainId, destContract, proofOrderId, fillerData);
-        
+
+        (, , bytes memory topics, bytes memory eventData) = prover.validateEvent(proof);
+
+        console2.log("\nDecoding event data...");
+        (
+            bytes32 decodedOrderId,
+            bytes memory decodedOriginData,
+            bytes memory decodedFillerData
+        ) = abi.decode(eventData, (bytes32, bytes, bytes));
+        console2.log("Decoded Order ID from proof:");
+        console2.logBytes32(decodedOrderId);
+        console2.log("Decoded Origin Data length:", decodedOriginData.length);
+        console2.log("Decoded Filler Data length:", decodedFillerData.length);
+      
         // Try to submit different order ID
         bytes32 submittedOrderId = bytes32("order2");
         
         vm.expectRevert(Polymer7683.InvalidEventData.selector);
-        polymer7683.handleSettlementWithProof(submittedOrderId, proof, 0, destChainId);
+        try polymer7683.handleSettlementWithProof(submittedOrderId, proof, 0, destChainId) {
+            console2.log("Call succeeded unexpectedly");
+        } catch Error(string memory reason) {
+            console2.log("Reverted with reason:", reason);
+        } catch (bytes memory errData) {
+            console2.log("Reverted with raw error data length:", errData.length);
+            if (errData.length >= 4) {
+                bytes4 selector = bytes4(errData);
+                console2.log("Error selector:");
+                console2.logBytes4(selector);
+            }
+        }
     }
 
     function test_handleRefundWithProof_success() public {
