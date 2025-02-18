@@ -88,9 +88,9 @@ contract Polymer7683 is BasicSwap7683, Ownable {
 
         // 2. Decode the Filled event data
         (
-         bytes32 eventOrderId,
-         bytes memory originData,
-         bytes memory fillerData
+            bytes32 eventOrderId,
+            bytes memory originData,
+            bytes memory fillerData
         ) = abi.decode(data, (bytes32, bytes, bytes));
 
         // 3. Decode the original order data to get expected destination chain

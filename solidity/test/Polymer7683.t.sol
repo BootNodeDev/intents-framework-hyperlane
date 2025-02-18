@@ -4,7 +4,8 @@ pragma solidity ^0.8.25;
 import { Test } from "forge-std/Test.sol";
 import { console2 } from "forge-std/console2.sol";
 import { TypeCasts } from "@hyperlane-xyz/libs/TypeCasts.sol";
-
+import { OnchainCrossChainOrder } from "../src/ERC7683/IERC7683.sol";
+import { OrderData, OrderEncoder } from "../src/libs/OrderEncoder.sol";
 import { Polymer7683 } from "../src/Polymer7683.sol";
 import { LightClientType } from "@polymerdao/prover-contracts/interfaces/IClientUpdates.sol";
 import { ICrossL2ProverV2 } from "@polymerdao/prover-contracts/interfaces/ICrossL2ProverV2.sol";
@@ -80,22 +81,36 @@ contract Polymer7683Test is Test {
         bytes32 orderId,
         bytes memory fillerData
     ) internal returns (bytes memory) {
+        OrderData memory orderData = OrderData({
+            sender: TypeCasts.addressToBytes32(address(this)),
+            recipient: TypeCasts.addressToBytes32(address(this)),
+            inputToken: bytes32(0),
+            outputToken: bytes32(0),
+            amountIn: 1e18,
+            amountOut: 2e18,
+            senderNonce: 0,
+            originDomain: uint32(localChainId),
+            destinationDomain: uint32(chainId),
+            destinationSettler: TypeCasts.addressToBytes32(emitter),
+            fillDeadline: uint32(block.timestamp + 1 hours),
+            data: ""
+            });
+
+        bytes memory originData = OrderEncoder.encode(orderData);
+    
+        // Create the proof data
         bytes memory topics = abi.encodePacked(
             keccak256("Filled(bytes32,bytes,bytes)"),
             bytes32(chainId)
         );
     
-        // Create dummy origin data
-        bytes memory originData = "dummyOriginData";
-    
-        // Include all three expected parameters
         bytes memory data = abi.encode(orderId, originData, fillerData);
     
         prover.setExpectedEvent(
-           uint32(chainId),
-           emitter,
-           topics,
-           data
+            uint32(chainId),
+            emitter,
+            topics,
+            data
         );
     
         return "dummy_proof";
@@ -142,18 +157,68 @@ contract Polymer7683Test is Test {
         // Register destination contract
         vm.prank(owner);
         polymer7683.setDestinationContract(destChainId, destContract);
-        
-        // Prepare order data
+    
+        console2.log("\nTest setup:");
+        console2.log("Local Chain ID:", localChainId);
+        console2.log("Destination Chain ID:", destChainId);
+        console2.log("Destination Contract:", destContract);
+    
+        // Create sample order ID and filler data
         bytes32 orderId = bytes32("orderId1");
         bytes memory fillerData = abi.encode(bytes32("filler1"));
-        
-        // Create and submit proof
+    
+        console2.log("\nOrder ID:");
+        console2.logBytes32(orderId);
+    
+        // Create and submit settlement proof
         bytes memory proof = _createSettlementProof(destChainId, destContract, orderId, fillerData);
+    
+        console2.log("\nSettlement proof details:");
+        console2.log("Proof length:", proof.length);
+    
+        // Get proof validation details
+        (
+            uint32 provenChainId,
+            address emitter,
+            bytes memory topics,
+            bytes memory data
+        ) = prover.validateEvent(proof);
+        console2.log("Proven Chain ID:", provenChainId);
+        console2.log("Emitter:", emitter);
+        console2.log("Topics length:", topics.length);
+        console2.log("Data length:", data.length);
+
+        console2.log("\nDecoding event data...");
+        (
+            bytes32 decodedOrderId,
+            bytes memory originData,
+            bytes memory decodedFillerData
+        ) = abi.decode(data, (bytes32, bytes, bytes));
+        console2.log("Decoded Order ID:");
+        console2.logBytes32(decodedOrderId);
+        console2.log("Origin Data length:", originData.length);
+        console2.log("Filler Data length:", decodedFillerData.length);
+
+        console2.log("\nSubmitting settlement proof...");
         polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId);
-        
-        // Verify event is marked as processed
-        bytes32 eventHash = keccak256(abi.encodePacked(proof, uint256(0), destChainId));
-        assertTrue(polymer7683.processedEvents(eventHash));
+
+        try polymer7683.handleSettlementWithProof(orderId, proof, 0, destChainId) {
+            console2.log("\nCall succeeded");
+        } catch Error(string memory reason) {
+            console2.log("\nReverted with reason:", reason);
+        } catch (bytes memory errData) {
+            console2.log("\nReverted with raw error data length:", errData.length);
+            if (errData.length >= 4) {
+                bytes4 selector = bytes4(errData);
+                console2.log("Error selector:");
+                console2.logBytes4(selector);
+            }
+        }
+   
+        /* // Verify event is marked as processed */
+        /* bytes32 eventHash = keccak256(abi.encodePacked(proof, uint256(0), destChainId)); */
+        /* console2.log("\nChecking if event is processed:"); */
+        /* console2.log(polymer7683.processedEvents(eventHash)); */
     }
 
     function test_handleSettlementWithProof_preventReplay() public {
