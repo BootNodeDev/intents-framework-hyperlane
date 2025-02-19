@@ -7,6 +7,8 @@ import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
 import { useWarpCore } from '../tokens/hooks';
 
+export const TOP_MAX = 50e6;
+
 interface FetchMaxParams {
   accounts: Record<ProtocolType, AccountInfo>;
   balance: TokenAmount;
@@ -38,7 +40,7 @@ async function fetchMaxAmount(
       destination,
       sender: address,
       senderPubKey: await publicKey,
-      topMax: 100e6,
+      topMax: TOP_MAX,
     });
     return maxAmount;
   } catch (error) {

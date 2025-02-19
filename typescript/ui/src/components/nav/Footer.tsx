@@ -49,7 +49,10 @@ function FooterLogo() {
 function FooterNav() {
   return (
     <nav className="text-md font-medium">
-      <ul style={{ gridTemplateColumns: 'auto auto auto auto auto' }} className="grid gap-x-7 gap-y-1.5">
+      <ul
+        style={{ gridTemplateColumns: 'auto auto auto auto auto' }}
+        className="grid gap-x-7 gap-y-1.5"
+      >
         {footerLinks.map((item) => (
           <li key={item.title}>
             <Link

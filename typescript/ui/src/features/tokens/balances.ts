@@ -145,6 +145,12 @@ const abi = [
   },
 ] as const;
 
+function getRpc(chainId: number): string | undefined {
+  if (chainId === 8453) return 'https://base.drpc.org';
+  if (chainId === 42161) return 'https://arbitrum.drpc.org';
+  return;
+}
+
 export async function checkOrderFilled({
   destination,
   orderId,
@@ -160,12 +166,12 @@ export async function checkOrderFilled({
 
   const chain = Object.values(chains).find(
     (chain) => chain.id === destinationChainId,
-  )! as chains.Chain;
+  )! as viemChains.Chain;
 
   const config = createConfig({
     chains: [chain],
     transports: {
-      [chain.id]: http(chain.id === 8453 ? 'https://base.llamarpc.com' : undefined),
+      [chain.id]: http(getRpc(chain.id)),
     },
   });
 

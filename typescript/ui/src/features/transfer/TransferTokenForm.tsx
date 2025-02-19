@@ -39,7 +39,7 @@ import {
 } from '../tokens/balances';
 import { getIndexForToken, getTokenByIndex, useWarpCore } from '../tokens/hooks';
 import { RecipientConfirmationModal } from './RecipientConfirmationModal';
-import { useFetchMaxAmount } from './maxAmount';
+import { TOP_MAX, useFetchMaxAmount } from './maxAmount';
 import { TransferFormValues } from './types';
 import { useRecipientBalanceWatcher } from './useBalanceWatcher';
 import { useFeeQuotes } from './useFeeQuotes';
@@ -512,6 +512,7 @@ async function validateForm(
       destination,
       recipient,
       sender: address || '',
+      topMax: TOP_MAX,
     });
     return result;
   } catch (error: any) {
