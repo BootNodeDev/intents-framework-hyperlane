@@ -10,7 +10,7 @@ type Metadata = {
   protocolName: string;
 };
 
-type ParsedArgs = {
+export type ParsedArgs = {
   orderId: string;
   senderAddress: string;
   recipients: Array<{
@@ -46,7 +46,11 @@ export abstract class BaseFiller<
   }
 
   create() {
-    return async (parsedArgs: TParsedArgs, originChainName: string) => {
+    return async (
+      parsedArgs: TParsedArgs,
+      originChainName: string,
+      blockNumber: number,
+    ) => {
       const origin = await this.retrieveOriginInfo(parsedArgs, originChainName);
       const target = await this.retrieveTargetInfo(parsedArgs);
 
@@ -67,7 +71,7 @@ export abstract class BaseFiller<
       const { data } = intent;
 
       try {
-        await this.fill(parsedArgs, data, originChainName);
+        await this.fill(parsedArgs, data, originChainName, blockNumber);
 
         await this.settleOrder(parsedArgs, data);
       } catch (error) {
@@ -130,6 +134,7 @@ export abstract class BaseFiller<
     parsedArgs: TParsedArgs,
     data: TIntentData,
     originChainName: string,
+    blockNumber: number,
   ): Promise<void>;
 
   protected async settleOrder(parsedArgs: TParsedArgs, data: TIntentData) {

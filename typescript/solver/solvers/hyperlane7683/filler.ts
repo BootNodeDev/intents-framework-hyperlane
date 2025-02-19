@@ -20,6 +20,7 @@ import {
   retrieveTokenBalance,
 } from "../utils.js";
 import { allowBlockLists, metadata } from "./config/index.js";
+import { saveBlockNumber } from "./db.js";
 
 export type Metadata = {
   protocolName: string;
@@ -95,7 +96,12 @@ class Hyperlane7683Filler extends BaseFiller<
     }
   }
 
-  protected async fill(parsedArgs: OpenEventArgs, data: IntentData) {
+  protected async fill(
+    parsedArgs: OpenEventArgs,
+    data: IntentData,
+    originChainName: string,
+    blockNumber: number,
+  ) {
     this.log.info({
       msg: "Filling Intent",
       intent: `${this.metadata.protocolName}-${parsedArgs.orderId}`,
@@ -206,6 +212,8 @@ class Hyperlane7683Filler extends BaseFiller<
         },
       ),
     );
+
+    await saveBlockNumber(originChainName, blockNumber, parsedArgs.orderId);
   }
 
   settleOrder(parsedArgs: OpenEventArgs, data: IntentData) {
@@ -262,6 +270,30 @@ const enoughBalanceOnDestination: Hyperlane7683Rule = async (
   return { data: "Enough tokens to fulfill the intent", success: true };
 };
 
+const intentNotFilled: Hyperlane7683Rule = async (parsedArgs, context) => {
+  const destinationSettler = bytes32ToAddress(
+    parsedArgs.resolvedOrder.fillInstructions[0].destinationSettler,
+  );
+  const _chainId =
+    parsedArgs.resolvedOrder.fillInstructions[0].destinationChainId.toString();
+  const filler = await context.multiProvider.getSigner(_chainId);
+
+  const destination = Hyperlane7683__factory.connect(
+    destinationSettler,
+    filler,
+  );
+
+  const UNKNOWN =
+    "0x0000000000000000000000000000000000000000000000000000000000000000";
+
+  const orderStatus = await destination.orderStatus(parsedArgs.orderId);
+
+  if (orderStatus !== UNKNOWN) {
+    return { error: "Intent already filled", success: false };
+  }
+  return { data: "Intent not yet filled", success: true };
+};
+
 // - ETH: 1
 // - OP: 10
 // - ARB: 42161
@@ -269,6 +301,8 @@ const enoughBalanceOnDestination: Hyperlane7683Rule = async (
 // - Gnosis: 100
 // - Bera: 80094
 // - Form: 478
+// - Unichain: 130
+// - Artela: 11820
 
 const allowedTokens: Record<string, string> = {
   "1": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
@@ -276,8 +310,10 @@ const allowedTokens: Record<string, string> = {
   "42161": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   "8453": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   "100": "0x2a22f9c3b484c3629090feed35f17ff8f88f76f0",
-  "80094": "0x549943e04f40284185054145c6E4e9568C1D3241", // TODO - check this one
-  "478": "0xFBf489bb4783D4B1B2e7D07ba39873Fb8068507D", // TODO - check this one
+  "80094": "0x549943e04f40284185054145c6E4e9568C1D3241",
+  "478": "0xFBf489bb4783D4B1B2e7D07ba39873Fb8068507D",
+  "130": "0x078D782b760474a361dDA0AF3839290b0EF57AD6",
+  "11820": "0x8d9Bd7E9ec3cd799a659EE650DfF6C799309fA91",
 };
 
 const MAX_AMOUNT_OUT = 100e6;
@@ -316,7 +352,12 @@ export const create = (
   return new Hyperlane7683Filler(
     multiProvider,
     keepBaseRules
-      ? [filterByTokenAndAmount, enoughBalanceOnDestination, ...customRules]
+      ? [
+          filterByTokenAndAmount,
+          intentNotFilled,
+          enoughBalanceOnDestination,
+          ...customRules,
+        ]
       : customRules,
   ).create();
 };

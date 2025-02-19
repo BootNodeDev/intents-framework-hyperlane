@@ -46,7 +46,6 @@ export async function settleOrder(
               destinationSettler,
               filler,
             );
-
             try {
               const value = await destination.quoteGasPayment(originChainId);
 

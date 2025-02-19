@@ -4,14 +4,82 @@ import { useAccountAddressForChain } from '@hyperlane-xyz/widgets';
 import { useQuery } from '@tanstack/react-query';
 import { createConfig, getBlockNumber, http, watchContractEvent } from '@wagmi/core';
 import { toast } from 'react-toastify';
-import type { Address as ViemAddress } from 'viem';
-import * as chains from 'viem/chains';
+import { defineChain, type Address as ViemAddress } from 'viem';
+import * as viemChains from 'viem/chains';
+import { chainConfig } from 'viem/op-stack';
 import { useToastError } from '../../components/toast/useToastError';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
 import { getChainDisplayName } from '../chains/utils';
 import { TransferFormValues } from '../transfer/types';
 import { useTokenByIndex } from './hooks';
+
+const artela = defineChain({
+  id: 11820,
+  name: 'artela',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'Artela',
+    symbol: 'ART',
+  },
+  rpcUrls: {
+    default: {
+      http: ['https://node-euro.artela.network/rpc', 'https://node-hongkong.artela.network/rpc'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Artela Explorer',
+      url: 'https://artscan.artela.network',
+      apiUrl: 'https://artscan.artela.network/api',
+    },
+  },
+});
+
+const sourceId = 1;
+const unichain = defineChain({
+  ...chainConfig,
+  id: 130,
+  name: 'Unichain',
+  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+  rpcUrls: {
+    default: {
+      http: ['https://mainnet.unichain.org/'],
+    },
+  },
+  blockExplorers: {
+    default: {
+      name: 'Unichain Explorer',
+      url: 'https://uniscan.xyz',
+      apiUrl: 'https://api.uniscan.xyz/api',
+    },
+  },
+  contracts: {
+    ...chainConfig.contracts,
+    multicall3: {
+      address: '0xca11bde05977b3631167028862be2a173976ca11',
+      blockCreated: 0,
+    },
+    disputeGameFactory: {
+      [sourceId]: {
+        address: '0x2F12d621a16e2d3285929C9996f478508951dFe4',
+      },
+    },
+    portal: {
+      [sourceId]: {
+        address: '0x0bd48f6B86a26D3a217d0Fa6FfE2B491B956A7a2',
+      },
+    },
+    l1StandardBridge: {
+      [sourceId]: {
+        address: '0x81014F44b0a345033bB2b3B21C7a1A308B35fEeA',
+      },
+    },
+  },
+  sourceId,
+});
+
+const chains = { artela, unichain, ...viemChains };
 
 export function useBalance(chain?: ChainName, token?: IToken, address?: Address) {
   const multiProvider = useMultiProvider();

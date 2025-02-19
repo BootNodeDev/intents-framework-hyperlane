@@ -1,0 +1,13 @@
+diff --git a/dist/warp/WarpCore.js b/dist/warp/WarpCore.js
+index 87c23e856061391a89b32b6c015b3fffb9296566..7c2e8950ca81416ff5eb6d79e8e38fb04408386b 100644
+--- a/dist/warp/WarpCore.js
++++ b/dist/warp/WarpCore.js
+@@ -204,7 +204,7 @@ export class WarpCore {
+             amountIn: amount.toString(),
+             amountOut: (amount === 1n ? amount : amount - interchainFee.amount).toString(),
+             destinationDomain: `${destinationDomainId}`,
+-            fillDeadline: `${Math.floor(Date.now() / 1000) + 60 * 5}`,
++            fillDeadline: `${Math.floor(Date.now() / 1000) + 60 * 60}`,
+         });
+         this.logger.debug(`Remote transfer tx for ${token.symbol} populated`);
+         const transferTx = {

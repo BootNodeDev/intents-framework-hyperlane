@@ -35,6 +35,15 @@ const metadata: Hyperlane7683Metadata = {
       address: "0x9245A985d2055CeA7576B293Da8649bb6C5af9D0",
       chainName: "form",
     },
+    {
+      address: "0x9245A985d2055CeA7576B293Da8649bb6C5af9D0",
+      chainName: "unichain",
+    },
+    {
+      address: "0x9245A985d2055CeA7576B293Da8649bb6C5af9D0",
+      chainName: "artela",
+    },
+
     // testnet
     // {
     //   address: "0x6d2175B89315A9EB6c7eA71fDE54Ac0f294aDC34",
@@ -51,6 +60,13 @@ const metadata: Hyperlane7683Metadata = {
     // {
     //   address: "0x6d2175B89315A9EB6c7eA71fDE54Ac0f294aDC34",
     //   chainName: "basesepolia",
+    // },
+    // {
+    //   address: "0x6d2175B89315A9EB6c7eA71fDE54Ac0f294aDC34",
+    //   chainName: "basesepolia",
+    //   initialBlock: 21491220,
+    //   pollInterval: 1000,
+    //   confirmationBlocks: 2,
     // },
   ],
 };
