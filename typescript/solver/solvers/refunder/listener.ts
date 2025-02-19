@@ -78,62 +78,68 @@ async function refund(multiProvider: MultiProvider,) {
 
       const providerTimestamp = (await provider.getBlock("latest")).timestamp
 
-      const orderStatus = await contract.orderStatus(order.orderId);
 
-      if (providerTimestamp > order.fillDeadline && orderStatus === UNKNOWN ) {
-        log.info({
-          msg: "Refunding Intent",
-          intent: `${metadata.protocolName}-${order.orderId}`,
-        });
+      if (providerTimestamp > order.fillDeadline) {
+        const orderStatus = await contract.orderStatus(order.orderId);
 
-        await saveOrderStatus(order.orderId, 'REFUNDING')
-
-        try {
-          const value = await contract.quoteGasPayment(order.originChainId);
-
-          const onchainCrossChainOrder: OnchainCrossChainOrderStruct = {
-            fillDeadline: order.fillDeadline,
-            orderDataType: "0x08d75650babf4de09c9273d48ef647876057ed91d4323f8a2e3ebc2cd8a63b5e",
-            orderData: order.orderData
-          }
-
-          const _tx = await contract.populateTransaction["refund((uint32,bytes32,bytes)[])"](
-            [onchainCrossChainOrder],
-            { value },
-          );
-
-          const gasLimit = await multiProvider.estimateGas(
-            destinationChainId,
-            _tx,
-            await filler.getAddress(),
-          );
-
-          const tx = await contract["refund((uint32,bytes32,bytes)[])"]([onchainCrossChainOrder], {
-            value,
-            gasLimit: gasLimit.mul(110).div(100),
-          });
-
-          const receipt = await tx.wait();
-
+        if (orderStatus === UNKNOWN) {
           log.info({
-            msg: "Refund Intent",
+            msg: "Refunding Intent",
             intent: `${metadata.protocolName}-${order.orderId}`,
-            txDetails: `https://explorer.hyperlane.xyz/?search=${receipt.transactionHash}`,
-            txHash: receipt.transactionHash,
           });
 
-          await saveOrderStatus(order.orderId, 'REFUNDED')
+          await saveOrderStatus(order.orderId, 'REFUNDING')
 
-        } catch (error) {
-          await saveOrderStatus(order.orderId, 'OPEN')
+          try {
+            const value = await contract.quoteGasPayment(order.originChainId);
 
-          log.error({
-            msg: `Failed refunding`,
-            intent: `${metadata.protocolName}-${order.orderId}`,
-            error,
-          });
-          return;
+            const onchainCrossChainOrder: OnchainCrossChainOrderStruct = {
+              fillDeadline: order.fillDeadline,
+              orderDataType: "0x08d75650babf4de09c9273d48ef647876057ed91d4323f8a2e3ebc2cd8a63b5e",
+              orderData: order.orderData
+            }
+
+            const _tx = await contract.populateTransaction["refund((uint32,bytes32,bytes)[])"](
+              [onchainCrossChainOrder],
+              { value },
+            );
+
+            const gasLimit = await multiProvider.estimateGas(
+              destinationChainId,
+              _tx,
+              await filler.getAddress(),
+            );
+
+            const tx = await contract["refund((uint32,bytes32,bytes)[])"]([onchainCrossChainOrder], {
+              value,
+              gasLimit: gasLimit.mul(110).div(100),
+            });
+
+            const receipt = await tx.wait();
+
+            log.info({
+              msg: "Refund Intent",
+              intent: `${metadata.protocolName}-${order.orderId}`,
+              txDetails: `https://explorer.hyperlane.xyz/?search=${receipt.transactionHash}`,
+              txHash: receipt.transactionHash,
+            });
+
+            await saveOrderStatus(order.orderId, 'REFUNDED')
+
+          } catch (error) {
+            await saveOrderStatus(order.orderId, 'OPEN')
+
+            log.error({
+              msg: `Failed refunding`,
+              intent: `${metadata.protocolName}-${order.orderId}`,
+              error,
+            });
+            return;
+          }
+        } else {
+          await saveOrderStatus(order.orderId, 'FILED')
         }
+
       }
     }
   }
