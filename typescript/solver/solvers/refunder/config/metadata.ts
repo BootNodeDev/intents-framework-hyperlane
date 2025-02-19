@@ -4,7 +4,7 @@ import {
 } from "../types.js";
 
 const metadata: Hyperlane7683Metadata = {
-  protocolName: "Hyperlane7683",
+  protocolName: "Hyperlane7683Refunder",
   originSettlers: [
     // mainnet
     // {
@@ -18,14 +18,12 @@ const metadata: Hyperlane7683Metadata = {
     {
       address: "0x9245A985d2055CeA7576B293Da8649bb6C5af9D0",
       chainName: "arbitrum",
-      pollInterval: 3000,
-      confirmationBlocks: 80,
+      pollInterval: 15000
     },
     {
       address: "0x9245A985d2055CeA7576B293Da8649bb6C5af9D0",
       chainName: "base",
-      pollInterval: 3000,
-      confirmationBlocks: 10,
+      pollInterval: 15000
     },
     // {
     //   address: "0x9245A985d2055CeA7576B293Da8649bb6C5af9D0",
@@ -68,9 +66,8 @@ const metadata: Hyperlane7683Metadata = {
     // {
     //   address: "0x6d2175B89315A9EB6c7eA71fDE54Ac0f294aDC34",
     //   chainName: "basesepolia",
-    //   initialBlock: 21491220,
-    //   pollInterval: 1000,
-    //   confirmationBlocks: 2,
+    //   initialBlock: 22105593,
+    //   pollInterval: 15000
     // },
   ],
 };

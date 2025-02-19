@@ -1,0 +1,1638 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_mailbox",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_permit2",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidDomain",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidGaslessOrderOrigin",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidGaslessOrderSettler",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidNativeAmount",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidNonce",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidOrderDomain",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidOrderId",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidOrderOrigin",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidOrderStatus",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "orderType",
+          "type": "bytes32"
+        }
+      ],
+      "name": "InvalidOrderType",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "originDomain",
+          "type": "uint32"
+        }
+      ],
+      "name": "InvalidOriginDomain",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidSender",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OrderFillExpired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OrderFillNotExpired",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "OrderOpenExpired",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "orderId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "originData",
+          "type": "bytes"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "fillerData",
+          "type": "bytes"
+        }
+      ],
+      "name": "Filled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "domain",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "gas",
+          "type": "uint256"
+        }
+      ],
+      "name": "GasSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_hook",
+          "type": "address"
+        }
+      ],
+      "name": "HookSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "version",
+          "type": "uint8"
+        }
+      ],
+      "name": "Initialized",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_ism",
+          "type": "address"
+        }
+      ],
+      "name": "IsmSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "nonce",
+          "type": "uint256"
+        }
+      ],
+      "name": "NonceInvalidation",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "orderId",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "user",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originChainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint32",
+              "name": "openDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderId",
+              "type": "bytes32"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "token",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "recipient",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct Output[]",
+              "name": "maxSpent",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "token",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "recipient",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct Output[]",
+              "name": "minReceived",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "destinationChainId",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "destinationSettler",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "originData",
+                  "type": "bytes"
+                }
+              ],
+              "internalType": "struct FillInstruction[]",
+              "name": "fillInstructions",
+              "type": "tuple[]"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct ResolvedCrossChainOrder",
+          "name": "resolvedOrder",
+          "type": "tuple"
+        }
+      ],
+      "name": "Open",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32[]",
+          "name": "orderIds",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "Refund",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "orderId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        }
+      ],
+      "name": "Refunded",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32[]",
+          "name": "orderIds",
+          "type": "bytes32[]"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes[]",
+          "name": "ordersFillerData",
+          "type": "bytes[]"
+        }
+      ],
+      "name": "Settle",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "bytes32",
+          "name": "orderId",
+          "type": "bytes32"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "receiver",
+          "type": "address"
+        }
+      ],
+      "name": "Settled",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "FILLED",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "OPENED",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PACKAGE_VERSION",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "PERMIT2",
+      "outputs": [
+        {
+          "internalType": "contract IPermit2",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "REFUNDED",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "RESOLVED_CROSS_CHAIN_ORDER_TYPEHASH",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "SETTLED",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "UNKNOWN",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "name": "destinationGas",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "domains",
+      "outputs": [
+        {
+          "internalType": "uint32[]",
+          "name": "",
+          "type": "uint32[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "_domain",
+          "type": "uint32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_router",
+          "type": "bytes32"
+        }
+      ],
+      "name": "enrollRemoteRouter",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32[]",
+          "name": "_domains",
+          "type": "uint32[]"
+        },
+        {
+          "internalType": "bytes32[]",
+          "name": "_addresses",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "enrollRemoteRouters",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "_orderId",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_originData",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_fillerData",
+          "type": "bytes"
+        }
+      ],
+      "name": "fill",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "orderId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "filledOrders",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "originData",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "fillerData",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "_origin",
+          "type": "uint32"
+        },
+        {
+          "internalType": "bytes32",
+          "name": "_sender",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_message",
+          "type": "bytes"
+        }
+      ],
+      "name": "handle",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "hook",
+      "outputs": [
+        {
+          "internalType": "contract IPostDispatchHook",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_customHook",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_interchainSecurityModule",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_owner",
+          "type": "address"
+        }
+      ],
+      "name": "initialize",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "interchainSecurityModule",
+      "outputs": [
+        {
+          "internalType": "contract IInterchainSecurityModule",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_nonce",
+          "type": "uint256"
+        }
+      ],
+      "name": "invalidateNonces",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_from",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_nonce",
+          "type": "uint256"
+        }
+      ],
+      "name": "isValidNonce",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "localDomain",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "mailbox",
+      "outputs": [
+        {
+          "internalType": "contract IMailbox",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderDataType",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes",
+              "name": "orderData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct OnchainCrossChainOrder",
+          "name": "_order",
+          "type": "tuple"
+        }
+      ],
+      "name": "open",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "originSettler",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "user",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nonce",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originChainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint32",
+              "name": "openDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderDataType",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes",
+              "name": "orderData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct GaslessCrossChainOrder",
+          "name": "_order",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_signature",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_originFillerData",
+          "type": "bytes"
+        }
+      ],
+      "name": "openFor",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "orderId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "openOrders",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "orderData",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "orderId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "orderStatus",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "status",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "_destinationDomain",
+          "type": "uint32"
+        }
+      ],
+      "name": "quoteGasPayment",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderDataType",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes",
+              "name": "orderData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct OnchainCrossChainOrder[]",
+          "name": "_orders",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "refund",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "originSettler",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "user",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nonce",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originChainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint32",
+              "name": "openDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderDataType",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes",
+              "name": "orderData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct GaslessCrossChainOrder[]",
+          "name": "_orders",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "refund",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderDataType",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes",
+              "name": "orderData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct OnchainCrossChainOrder",
+          "name": "_order",
+          "type": "tuple"
+        }
+      ],
+      "name": "resolve",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "user",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originChainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint32",
+              "name": "openDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderId",
+              "type": "bytes32"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "token",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "recipient",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct Output[]",
+              "name": "maxSpent",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "token",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "recipient",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct Output[]",
+              "name": "minReceived",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "destinationChainId",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "destinationSettler",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "originData",
+                  "type": "bytes"
+                }
+              ],
+              "internalType": "struct FillInstruction[]",
+              "name": "fillInstructions",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct ResolvedCrossChainOrder",
+          "name": "_resolvedOrder",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "originSettler",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "user",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nonce",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originChainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint32",
+              "name": "openDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderDataType",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "bytes",
+              "name": "orderData",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct GaslessCrossChainOrder",
+          "name": "_order",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_originFillerData",
+          "type": "bytes"
+        }
+      ],
+      "name": "resolveFor",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "user",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originChainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint32",
+              "name": "openDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderId",
+              "type": "bytes32"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "token",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "recipient",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct Output[]",
+              "name": "maxSpent",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "token",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "recipient",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct Output[]",
+              "name": "minReceived",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "destinationChainId",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "destinationSettler",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "originData",
+                  "type": "bytes"
+                }
+              ],
+              "internalType": "struct FillInstruction[]",
+              "name": "fillInstructions",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct ResolvedCrossChainOrder",
+          "name": "_resolvedOrder",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "_domain",
+          "type": "uint32"
+        }
+      ],
+      "name": "routers",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "domain",
+          "type": "uint32"
+        },
+        {
+          "internalType": "uint256",
+          "name": "gas",
+          "type": "uint256"
+        }
+      ],
+      "name": "setDestinationGas",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "domain",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint256",
+              "name": "gas",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct GasRouter.GasRouterConfig[]",
+          "name": "gasConfigs",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "setDestinationGas",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_hook",
+          "type": "address"
+        }
+      ],
+      "name": "setHook",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_module",
+          "type": "address"
+        }
+      ],
+      "name": "setInterchainSecurityModule",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32[]",
+          "name": "_orderIds",
+          "type": "bytes32[]"
+        }
+      ],
+      "name": "settle",
+      "outputs": [],
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32",
+          "name": "_domain",
+          "type": "uint32"
+        }
+      ],
+      "name": "unenrollRemoteRouter",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint32[]",
+          "name": "_domains",
+          "type": "uint32[]"
+        }
+      ],
+      "name": "unenrollRemoteRouters",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "usedNonces",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "user",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "originChainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint32",
+              "name": "openDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "fillDeadline",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "orderId",
+              "type": "bytes32"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "token",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "recipient",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct Output[]",
+              "name": "maxSpent",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "bytes32",
+                  "name": "token",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "amount",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "recipient",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "chainId",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct Output[]",
+              "name": "minReceived",
+              "type": "tuple[]"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "destinationChainId",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "bytes32",
+                  "name": "destinationSettler",
+                  "type": "bytes32"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "originData",
+                  "type": "bytes"
+                }
+              ],
+              "internalType": "struct FillInstruction[]",
+              "name": "fillInstructions",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct ResolvedCrossChainOrder",
+          "name": "_resolvedOrder",
+          "type": "tuple"
+        }
+      ],
+      "name": "witnessHash",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "witnessTypeString",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]
+}

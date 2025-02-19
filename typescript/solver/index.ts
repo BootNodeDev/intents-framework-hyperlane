@@ -27,6 +27,8 @@ const main = async () => {
     solvers["hyperlane7683"].filler.create(multiProvider);
 
   hyperlane7683Listener(hyperlane7683Filler);
+
+  await solvers["refunder"].listener.create(multiProvider);
 };
 
 await main();
