@@ -8,6 +8,7 @@
   "dependencies": {
     "@hyperlane-xyz/core": "^5.4.1",
     "@openzeppelin/contracts": "^4.9.6",
+    "@polymerdao/prover-contracts": "^0.0.17",
     "@uniswap/permit2": "github:Uniswap/permit2",
     "dotenv-run-script": "^0.4.1"
   },
