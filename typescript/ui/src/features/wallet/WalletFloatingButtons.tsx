@@ -9,9 +9,9 @@ export function WalletFloatingButtons() {
   }));
 
   return (
-    <div className="absolute -right-8 top-2 hidden flex-col items-center justify-end gap-4 sm:flex">
+    <div className="absolute -top-8 right-0 flex-col items-center justify-end gap-4 sm:-right-8 sm:top-2 sm:flex">
       <IconButton
-        classes={`p-0.5 ${styles.roundedCircle} `}
+        className={`p-0.5 ${styles.roundedCircle} `}
         title="History"
         onClick={() => setIsSideBarOpen(!isSideBarOpen)}
       >

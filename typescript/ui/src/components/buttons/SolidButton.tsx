@@ -2,7 +2,7 @@ import { PropsWithChildren, ReactElement } from 'react';
 
 interface ButtonProps {
   type?: 'submit' | 'reset' | 'button';
-  color?: 'white' | 'primary' | 'accent' | 'green' | 'red' | 'gray'; // defaults to primary
+  color?: 'white' | 'primary' | 'accent' | 'green' | 'red' | 'gray' | 'secondary'; // defaults to primary
   bold?: boolean;
   className?: string;
   icon?: ReactElement;
@@ -45,6 +45,9 @@ export function SolidButton(
   } else if (color === 'gray') {
     baseColors = 'bg-gray-100 text-primary-500';
     onHover = 'hover:bg-gray-200';
+  } else if (color === 'secondary') {
+    baseColors = 'bg-secondary-100 text-black border border-secondary-200';
+    onHover = 'hover:bg-secondary-300';
   }
   const onDisabled = 'disabled:bg-gray-300 disabled:text-gray-500';
   const weight = bold ? 'font-semibold' : '';
