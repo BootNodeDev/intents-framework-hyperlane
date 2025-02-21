@@ -314,9 +314,9 @@ function MaxButton({ balance, disabled }: { balance?: TokenAmount; disabled?: bo
     <SolidButton
       type="button"
       onClick={onClick}
-      color="primary"
+      color="secondary"
       disabled={disabled}
-      classes="text-xs absolute right-1 top-2.5 bottom-1 px-2 opacity-90 all:rounded"
+      classes="text-xs absolute right-1 top-2.5 bottom-1 px-2 all:rounded"
     >
       {isLoading ? (
         <div className="flex items-center">
@@ -344,9 +344,9 @@ function SelfButton({ disabled }: { disabled?: boolean }) {
     <SolidButton
       type="button"
       onClick={onClick}
-      color="primary"
+      color="secondary"
       disabled={disabled}
-      classes="text-xs absolute right-1 top-2.5 bottom-1 px-2 opacity-90 all:rounded"
+      classes="text-xs absolute right-1 top-2.5 bottom-1 px-2 all:rounded"
     >
       Self
     </SolidButton>
