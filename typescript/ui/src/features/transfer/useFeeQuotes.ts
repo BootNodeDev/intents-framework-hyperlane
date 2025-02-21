@@ -7,12 +7,8 @@ import { useMultiProvider } from '../chains/hooks';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
 import { TransferFormValues } from './types';
 
-const FEE_QUOTE_REFRESH_INTERVAL = 15_000; // 10s
-
-export function useFeeQuotes(
-  { origin, destination, tokenIndex }: TransferFormValues,
-  enabled: boolean,
-) {
+export function useFeeQuotes(formValues: TransferFormValues, enabled: boolean) {
+  const { origin, destination, tokenIndex } = formValues ?? {};
   const multiProvider = useMultiProvider();
   const warpCore = useWarpCore();
 
@@ -26,16 +22,16 @@ export function useFeeQuotes(
   const { isLoading, isError, data } = useQuery({
     // The WarpCore class is not serializable, so we can't use it as a key
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
-    queryKey: ['useFeeQuotes', destination, tokenIndex, sender, senderPubKey],
+    queryKey: ['useFeeQuotes', origin, destination, tokenIndex, sender, senderPubKey],
     queryFn: () => fetchFeeQuotes(warpCore, destination, tokenIndex, sender, senderPubKey),
     enabled,
-    refetchInterval: FEE_QUOTE_REFRESH_INTERVAL,
+    refetchInterval: false,
   });
 
   return { isLoading, isError, fees: data };
 }
 
-async function fetchFeeQuotes(
+export async function fetchFeeQuotes(
   warpCore: WarpCore,
   destination?: ChainName,
   tokenIndex?: number,

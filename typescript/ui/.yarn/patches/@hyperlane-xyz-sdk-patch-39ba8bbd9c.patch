@@ -1,0 +1,103 @@
+diff --git a/dist/warp/WarpCore.d.ts b/dist/warp/WarpCore.d.ts
+index d0b2f36c1d43a776f78c330f6f837dc4c97a47ff..0baae34c9b7e1164e7f729f1aa02af8a71f0077d 100644
+--- a/dist/warp/WarpCore.d.ts
++++ b/dist/warp/WarpCore.d.ts
+@@ -1,5 +1,5 @@
+-import { Logger } from 'pino';
+ import { Address, HexString } from '@hyperlane-xyz/utils';
++import { Logger } from 'pino';
+ import { MultiProtocolProvider } from '../providers/MultiProtocolProvider.js';
+ import { TransactionFeeEstimate } from '../providers/transactionFeeEstimators.js';
+ import { IToken } from '../token/IToken.js';
+@@ -86,12 +86,13 @@ export declare class WarpCore {
+      * Computes the max transferrable amount of the from the given
+      * token balance, accounting for local and interchain gas fees
+      */
+-    getMaxTransferAmount({ balance, destination, sender, senderPubKey, feeEstimate, }: {
++    getMaxTransferAmount({ balance, destination, sender, senderPubKey, feeEstimate, topMax }: {
+         balance: TokenAmount;
+         destination: ChainNameOrId;
+         sender: Address;
+         senderPubKey?: HexString;
+         feeEstimate?: WarpCoreFeeEstimate;
++        topMax?: number;
+     }): Promise<TokenAmount>;
+     /**
+      * Checks if destination chain's collateral is sufficient to cover the transfer
+@@ -110,12 +111,13 @@ export declare class WarpCore {
+     /**
+      * Ensure the remote token transfer would be valid for the given chains, amount, sender, and recipient
+      */
+-    validateTransfer({ originTokenAmount, destination, recipient, sender, senderPubKey, }: {
++    validateTransfer({ originTokenAmount, destination, recipient, sender, senderPubKey, topMax }: {
+         originTokenAmount: TokenAmount;
+         destination: ChainNameOrId;
+         recipient: Address;
+         sender: Address;
+         senderPubKey?: HexString;
++        topMax?: number;
+     }): Promise<Record<string, string> | null>;
+     /**
+      * Ensure the origin and destination chains are valid and known by this WarpCore
+diff --git a/dist/warp/WarpCore.js b/dist/warp/WarpCore.js
+index 7c2e8950ca81416ff5eb6d79e8e38fb04408386b..7f56a2585b6611771bd803c06d33d5cafcf13d5d 100644
+--- a/dist/warp/WarpCore.js
++++ b/dist/warp/WarpCore.js
+@@ -288,14 +288,14 @@ export class WarpCore {
+     /**
+      * Ensure the remote token transfer would be valid for the given chains, amount, sender, and recipient
+      */
+-    async validateTransfer({ originTokenAmount, destination, recipient, sender, senderPubKey, }) {
++    async validateTransfer({ originTokenAmount, destination, recipient, sender, senderPubKey, topMax }) {
+         const chainError = this.validateChains(originTokenAmount.token.chainName, destination);
+         if (chainError)
+             return chainError;
+         const recipientError = this.validateRecipient(recipient, destination);
+         if (recipientError)
+             return recipientError;
+-        const balancesError = await this.validateTokenBalances(originTokenAmount, destination, sender, senderPubKey);
++        const balancesError = await this.validateTokenBalances(originTokenAmount, destination, sender, senderPubKey, topMax);
+         if (balancesError)
+             return balancesError;
+         return null;
+@@ -352,27 +352,16 @@ export class WarpCore {
+         }
+         return null;
+     }
+-    /**
+-     * Ensure the sender has sufficient balances for transfer and interchain gas
+-     */
+-    async validateTokenBalances(originTokenAmount, destination, sender, senderPubKey) {
+-        const { token: originToken, amount } = originTokenAmount;
+-        const { amount: senderBalance } = await originToken.getBalance(this.multiProvider, sender);
+-        const senderBalanceAmount = originTokenAmount.token.amount(senderBalance);
+-        // Check 1: Check basic token balance
+-        if (amount > senderBalance)
+-            return { amount: 'Insufficient balance' };
+-        return null;
+-    }
+ 
+-  /**
++    /**
+    * Ensure the sender has sufficient balances for transfer and interchain gas
+    */
+   async validateTokenBalances(
+     originTokenAmount,
+     destination,
+     sender,
+-    senderPubKey
++    senderPubKey,
++    topMax
+   ) {
+     const { token: originToken, amount } = originTokenAmount
+ 
+@@ -383,7 +372,8 @@ export class WarpCore {
+     const senderBalanceAmount = originTokenAmount.token.amount(senderBalance)
+ 
+     // Check 1: Check basic token balance
+-    if (amount > senderBalance) return { amount: "Insufficient balance" }
++      if (amount > senderBalance) return { amount: "Insufficient balance" }
++      if (amount > topMax) return { amount: `Amount exceeds ${topMax * 10 ** -6} USDC` }
+ 
+     // Check 2: Ensure the balance can cover interchain fee
+     // Slightly redundant with Check 4 but gives more specific error messages
