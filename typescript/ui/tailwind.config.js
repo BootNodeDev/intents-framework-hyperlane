@@ -101,6 +101,7 @@ module.exports = {
       },
       maxWidth: {
         'xl-1': '39.5rem',
+        '95vw': '95vw',
       },
     },
   },
