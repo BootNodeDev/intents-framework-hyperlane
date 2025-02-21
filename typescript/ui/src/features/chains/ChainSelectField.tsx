@@ -43,11 +43,11 @@ export function ChainSelectField({ name, label, onChange, disabled, customListIt
         className={`${styles.base} ${disabled ? styles.disabled : styles.enabled}`}
         onClick={onClick}
       >
-        <div className="flex items-center gap-3">
-          <div className="max-w-[1.4rem] sm:max-w-fit">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <div className="max-w-[1.4rem] flex-shrink-0 sm:max-w-fit">
             <ChainLogo chainName={field.value} size={32} />
           </div>
-          <div className="flex flex-col items-start gap-1">
+          <div className="flex flex-col items-start gap-1 whitespace-nowrap">
             <label htmlFor={name} className="text-xs text-gray-600">
               {label}
             </label>
