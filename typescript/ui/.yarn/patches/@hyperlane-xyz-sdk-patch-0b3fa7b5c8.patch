@@ -1,0 +1,96 @@
+diff --git a/dist/warp/WarpCore.js b/dist/warp/WarpCore.js
+index 670f44e96ef7b5bc394288d28aededfaebe5294d..cfa46878d3972161f69b0620cccbc4ee4c66b7cd 100644
+--- a/dist/warp/WarpCore.js
++++ b/dist/warp/WarpCore.js
+@@ -65,7 +65,8 @@ export class WarpCore {
+         let gasAmount;
+         let gasAddressOrDenom;
+         // Check constant quotes first
+-        const defaultQuote = this.interchainFeeConstants.find((q) => q.origin === originName && q.destination === destinationName);
++        const defaultQuote = this.interchainFeeConstants.find((q) => q.origin.split('101010').includes(originName) &&
++            q.destination.split('101010').includes(destinationName));
+         if (defaultQuote) {
+             gasAmount = BigInt(defaultQuote.amount.toString());
+             gasAddressOrDenom = defaultQuote.addressOrDenom;
+@@ -197,7 +198,7 @@ export class WarpCore {
+             recipient,
+             outputToken: token.getConnections().find((c) => c.token.chainName === destination)?.token.addressOrDenom,
+             amountIn: amount.toString(),
+-            amountOut: amount.toString(),
++            amountOut: (amount === 1n ? amount : amount - interchainFee.amount).toString(),
+             destinationDomain: `${destinationDomainId}`,
+             fillDeadline: `${Math.floor(Date.now() / 1000) + 60 * 5}`,
+         });
+@@ -356,6 +357,72 @@ export class WarpCore {
+             return { amount: 'Insufficient balance' };
+         return null;
+     }
++
++  /**
++   * Ensure the sender has sufficient balances for transfer and interchain gas
++   */
++  async validateTokenBalances(
++    originTokenAmount,
++    destination,
++    sender,
++    senderPubKey
++  ) {
++    const { token: originToken, amount } = originTokenAmount
++
++    const { amount: senderBalance } = await originToken.getBalance(
++      this.multiProvider,
++      sender
++    )
++    const senderBalanceAmount = originTokenAmount.token.amount(senderBalance)
++
++    // Check 1: Check basic token balance
++    if (amount > senderBalance) return { amount: "Insufficient balance" }
++
++    // Check 2: Ensure the balance can cover interchain fee
++    // Slightly redundant with Check 4 but gives more specific error messages
++    const interchainQuote = await this.getInterchainTransferFee({
++      originToken,
++      destination,
++      sender
++    })
++    // Get balance of the IGP fee token, which may be different from the transfer token
++    const interchainQuoteTokenBalance = originToken.isFungibleWith(
++      interchainQuote.token
++    )
++      ? senderBalanceAmount
++      : await interchainQuote.token.getBalance(this.multiProvider, sender)
++    if (interchainQuoteTokenBalance.amount < interchainQuote.amount) {
++      return {
++        amount: `Insufficient ${interchainQuote.token.symbol} for interchain gas`
++      }
++    }
++
++    // Check 3: Simulates the transfer by getting the local gas fee
++    const localQuote = await this.getLocalTransferFeeAmount({
++      originToken,
++      destination,
++      sender,
++      senderPubKey,
++      interchainFee: interchainQuote
++    })
++
++    const feeEstimate = { interchainQuote, localQuote }
++
++    // Check 4: Ensure balances can cover the COMBINED amount and fees
++    const maxTransfer = await this.getMaxTransferAmount({
++      balance: senderBalanceAmount,
++      destination,
++      sender,
++      senderPubKey,
++      feeEstimate
++    })
++    if (amount > maxTransfer.amount) {
++      return { amount: "Insufficient balance for gas and transfer" }
++    }
++
++    return null
++  }
++
+     /**
+      * Ensure the sender has sufficient balances for transfer and interchain gas
+      */

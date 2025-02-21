@@ -1,73 +1,89 @@
-import { TypedTransactionReceipt, WarpCore, WarpTxCategory } from '@hyperlane-xyz/sdk';
+import { TransactionReceipt } from '@ethersproject/providers';
+import { TokenAmount, TypedTransactionReceipt, WarpCore, WarpTxCategory } from '@hyperlane-xyz/sdk';
 import { toTitleCase, toWei } from '@hyperlane-xyz/utils';
 import {
+  getAccountAddressAndPubKey,
   getAccountAddressForChain,
   useAccounts,
   useActiveChains,
   useTransactionFns,
 } from '@hyperlane-xyz/widgets';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { toastTxSuccess } from '../../components/toast/TxSuccessToast';
 import { logger } from '../../utils/logger';
 import { useMultiProvider } from '../chains/hooks';
 import { getChainDisplayName } from '../chains/utils';
 import { AppState, useStore } from '../store';
+import { checkOrderFilled } from '../tokens/balances';
 import { getTokenByIndex, useWarpCore } from '../tokens/hooks';
 import { TransferContext, TransferFormValues, TransferStatus } from './types';
-import { tryGetMsgIdFromTransferReceipt } from './utils';
+import { fetchFeeQuotes } from './useFeeQuotes';
 
 const CHAIN_MISMATCH_ERROR = 'ChainMismatchError';
 const TRANSFER_TIMEOUT_ERROR1 = 'block height exceeded';
 const TRANSFER_TIMEOUT_ERROR2 = 'timeout';
 
 export function useTokenTransfer(onDone?: () => void) {
-  const { transfers, addTransfer, updateTransferStatus } = useStore((s) => ({
+  const { transfers, addTransfer, updateTransferStatus, setTransferLoading } = useStore((s) => ({
     transfers: s.transfers,
     addTransfer: s.addTransfer,
     updateTransferStatus: s.updateTransferStatus,
+    setTransferLoading: s.setTransferLoading,
   }));
   const transferIndex = transfers.length;
 
   const multiProvider = useMultiProvider();
   const warpCore = useWarpCore();
+  const { accounts } = useAccounts(multiProvider);
 
   const activeAccounts = useAccounts(multiProvider);
   const activeChains = useActiveChains(multiProvider);
   const transactionFns = useTransactionFns(multiProvider);
 
-  const [isLoading, setIsLoading] = useState(false);
-
   // TODO implement cancel callback for when modal is closed?
   const triggerTransactions = useCallback(
-    (values: TransferFormValues) =>
-      executeTransfer({
+    async (values: TransferFormValues) => {
+      const { origin, destination, tokenIndex } = values ?? {};
+      const { address: sender, publicKey: senderPubKey } = getAccountAddressAndPubKey(
+        multiProvider,
+        origin,
+        accounts,
+      );
+
+      const fees = await fetchFeeQuotes(warpCore, destination, tokenIndex, sender, senderPubKey);
+      const originToken = getTokenByIndex(warpCore, tokenIndex);
+
+      await executeTransfer({
         warpCore,
         values,
         transferIndex,
         activeAccounts,
         activeChains,
         transactionFns,
+        interchainFee: fees?.interchainQuote ?? new TokenAmount('0', originToken!),
         addTransfer,
         updateTransferStatus,
-        setIsLoading,
+        setTransferLoading,
         onDone,
-      }),
+      });
+    },
     [
+      multiProvider,
+      accounts,
       warpCore,
       transferIndex,
       activeAccounts,
       activeChains,
       transactionFns,
-      setIsLoading,
       addTransfer,
       updateTransferStatus,
+      setTransferLoading,
       onDone,
     ],
   );
 
   return {
-    isLoading,
     triggerTransactions,
   };
 }
@@ -79,9 +95,10 @@ async function executeTransfer({
   activeAccounts,
   activeChains,
   transactionFns,
+  interchainFee,
   addTransfer,
   updateTransferStatus,
-  setIsLoading,
+  setTransferLoading,
   onDone,
 }: {
   warpCore: WarpCore;
@@ -90,13 +107,13 @@ async function executeTransfer({
   activeAccounts: ReturnType<typeof useAccounts>;
   activeChains: ReturnType<typeof useActiveChains>;
   transactionFns: ReturnType<typeof useTransactionFns>;
+  interchainFee: TokenAmount;
   addTransfer: (t: TransferContext) => void;
   updateTransferStatus: AppState['updateTransferStatus'];
-  setIsLoading: (b: boolean) => void;
+  setTransferLoading: (b: boolean) => void;
   onDone?: () => void;
 }) {
   logger.debug('Preparing transfer transaction(s)');
-  setIsLoading(true);
   let transferStatus: TransferStatus = TransferStatus.Preparing;
   updateTransferStatus(transferIndex, transferStatus);
 
@@ -111,7 +128,7 @@ async function executeTransfer({
     const originProtocol = originToken.protocol ?? 'ethereum';
     const isNft = originToken.isNft();
     const weiAmountOrId = isNft ? amount : toWei(amount, originToken.decimals);
-    const originTokenAmount = originToken.amount(weiAmountOrId);
+    const originTokenAmount = originToken.amount(BigInt(weiAmountOrId) + interchainFee.amount);
 
     const sendTransaction = transactionFns[originProtocol].sendTransaction;
     const activeChain = activeChains.chains[originProtocol];
@@ -136,6 +153,8 @@ async function executeTransfer({
       amount,
     });
 
+    setTransferLoading(true);
+
     updateTransferStatus(transferIndex, (transferStatus = TransferStatus.CreatingTxs));
 
     const txs = await warpCore.getTransferRemoteTxs({
@@ -143,6 +162,7 @@ async function executeTransfer({
       destination,
       sender,
       recipient,
+      interchainFee,
     });
 
     const hashes: string[] = [];
@@ -162,13 +182,32 @@ async function executeTransfer({
       hashes.push(hash);
     }
 
-    const msgId = txReceipt
-      ? tryGetMsgIdFromTransferReceipt(multiProvider, origin, txReceipt)
-      : undefined;
+    const msgId = undefined;
 
-    updateTransferStatus(transferIndex, (transferStatus = TransferStatus.ConfirmedTransfer), {
+    const orderId = (txReceipt?.receipt as TransactionReceipt)?.logs?.find(
+      (log) =>
+        log.topics[0].toLowerCase() ===
+        '0x3448bbc2203c608599ad448eeb1007cea04b788ac631f9f558e8dd01a3c27b3d', // `Open` event
+    )!.topics[1];
+
+    updateTransferStatus(transferIndex, (transferStatus = TransferStatus.WaitingForFulfillment), {
       originTxHash: hashes.at(-1),
       msgId,
+      orderId,
+    });
+
+    const remoteTxHash = await checkOrderFilled({
+      destination,
+      orderId,
+      originToken,
+      multiProvider,
+    }).catch((error) => {
+      logger.error('Error checking order filled', error);
+      return undefined;
+    });
+
+    updateTransferStatus(transferIndex, (transferStatus = TransferStatus.ConfirmedTransfer), {
+      remoteTxHash,
     });
   } catch (error: any) {
     logger.error(`Error at stage ${transferStatus}`, error);
@@ -189,7 +228,7 @@ async function executeTransfer({
     }
   }
 
-  setIsLoading(false);
+  setTransferLoading(false);
   if (onDone) onDone();
 }
 

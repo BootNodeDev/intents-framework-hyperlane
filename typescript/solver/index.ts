@@ -16,12 +16,13 @@ const main = async () => {
   log.info("Starting...");
 
   // TODO: implement a way to choose different listeners and fillers
-  const ecoListener = solvers["eco"].listener.create();
-  const ecoFiller = solvers["eco"].filler.create(multiProvider);
+  // const ecoListener = solvers["eco"].listener.create();
+  // const ecoFiller = solvers["eco"].filler.create(multiProvider);
 
-  ecoListener(ecoFiller);
+  // ecoListener(ecoFiller);
 
-  const hyperlane7683Listener = solvers["hyperlane7683"].listener.create();
+  const hyperlane7683Listener =
+    await solvers["hyperlane7683"].listener.create();
   const hyperlane7683Filler =
     solvers["hyperlane7683"].filler.create(multiProvider);
 

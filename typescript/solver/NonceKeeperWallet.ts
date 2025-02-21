@@ -26,11 +26,11 @@ export class NonceKeeperWallet extends Wallet {
     return nonce;
   }
 
-  sendTransaction(
+  async sendTransaction(
     transaction: Deferrable<TransactionRequest>,
   ): Promise<TransactionResponse> {
     if (transaction.nonce == null) {
-      transaction.nonce = this.getNextNonce();
+      transaction.nonce = await this.getNextNonce();
     }
 
     log.debug({ msg: "transaction", transaction });

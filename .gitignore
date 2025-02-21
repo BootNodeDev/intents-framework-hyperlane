@@ -74,6 +74,8 @@ web_modules/
 
 # dotenv environment variable files
 .env
+.env.testnet
+.env.mainnet
 .env.development.local
 .env.test.local
 .env.production.local
@@ -133,3 +135,6 @@ dist
 .idea
 .vscode
 .pnotes/
+
+.env
+.env.testnet

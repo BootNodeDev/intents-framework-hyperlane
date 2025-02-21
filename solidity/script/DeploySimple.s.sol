@@ -27,8 +27,9 @@ contract DeploySimple is Script {
         address owner = vm.envAddress("ROUTER_OWNER");
 
         uint256[] memory domains = vm.envUint("DOMAINS", ",");
+        uint256[] memory gasDomains = vm.envUint("GAS_BY_DOMAIN", ",");
         address[] memory routers = vm.envAddress("ROUTERS", ",");
-        assert(routers.length == domains.length);
+        assert(routers.length == domains.length && domains.length == gasDomains.length);
         uint32[] memory _domains = new uint32[](domains.length);
         bytes32[] memory _routers = new bytes32[](domains.length);
         GasRouter.GasRouterConfig[] memory gasConfigs = new GasRouter.GasRouterConfig[](domains.length);
@@ -42,8 +43,7 @@ contract DeploySimple is Script {
         for (uint i = 0; i < domains.length; i++) {
           _routers[i] = TypeCasts.addressToBytes32(routers[i]);
           _domains[i] = uint32(domains[i]);
-          // TODO - amount is based on gas report from tests multiply 2
-          gasConfigs[i] = GasRouter.GasRouterConfig(_domains[i], 1070688);
+          gasConfigs[i] = GasRouter.GasRouterConfig(_domains[i], gasDomains[i]);
         }
 
         Hyperlane7683(address(proxy)).enrollRemoteRouters(_domains, _routers);
@@ -61,15 +61,12 @@ contract DeploySimple is Script {
     }
 
     function deployProxyAdmin() internal returns (ProxyAdmin proxyAdmin) {
-        string memory ROUTER_SALT = vm.envString("HYPERLANE7683_SALT");
         address proxyAdminOwner = vm.envAddress("PROXY_ADMIN_OWNER");
 
         proxyAdmin = new OwnableProxyAdmin(proxyAdminOwner);
     }
 
     function deployImplementation() internal returns (address routerImpl) {
-        uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PK");
-        string memory ROUTER_SALT = vm.envString("HYPERLANE7683_SALT");
         address mailbox = vm.envAddress("MAILBOX");
         address permit2 = vm.envAddress("PERMIT2");
 
@@ -78,7 +75,6 @@ contract DeploySimple is Script {
 
     function deployProxy(address routerImpl, address proxyAdmin) internal returns (TransparentUpgradeableProxy proxy) {
         uint256 deployerPrivateKey = vm.envUint("DEPLOYER_PK");
-        string memory ROUTER_SALT = vm.envString("HYPERLANE7683_SALT");
         address initialOwner = vm.addr(deployerPrivateKey);
 
         proxy = new TransparentUpgradeableProxy(

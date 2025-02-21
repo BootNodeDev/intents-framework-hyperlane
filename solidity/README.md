@@ -66,6 +66,8 @@ cases and requirements.
 | Gnosis     | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://gnosisscan.io/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://gnosisscan.io/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
 | Berachain  | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://berascan.com/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://berascan.com/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
 | Form       | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://explorer.form.network/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://explorer.form.network/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
+| Unichain   | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://uniscan.xyz/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://uniscan.xyz/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
+| Artela     | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://artscan.artela.network/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://artscan.artela.network/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
 
 
 ## Scripts
@@ -85,7 +87,7 @@ Set the following environment variables required for running all the scripts, on
 If the network is not listed under the `rpc_endpoints` section of the [foundry.toml file](./foundry.toml) you'll have to
 add a new entry for it.
 
-For deploying the router you have to run the `npm run run:deployHyperlane7683`. Make sure the following environment
+For deploying the router you have to run the `yarn run:deployHyperlane7683`. Make sure the following environment
 variable are set:
 
 - `DEPLOYER_PK`: deployer private key
@@ -101,7 +103,7 @@ variable are set:
 
 ### Open an Order
 
-For opening an onchain order you can run `npm run run:openOrder`. Make sure the following environment variable are set:
+For opening an onchain order you can run `yarn run:openOrder`. Make sure the following environment variable are set:
 
 - `ROUTER_OWNER_PK`: the router's owner private key. Only the owner can enroll routers
 - `ORDER_SENDER`: address of order sender
@@ -111,6 +113,18 @@ For opening an onchain order you can run `npm run run:openOrder`. Make sure the 
 - `AMOUNT_IN`: amount in
 - `AMOUNT_OUT`: amount out
 - `DESTINATION_DOMAIN`: destination domain id
+
+### Refund Order
+
+For refunding an expired order you can run `yarn run:refundOrder`. Make sure the following environment variable are set:
+
+- `NETWORK`: the name of the network you want to run the script, it should be the destination network of your order
+- `USER_PK`: the private key to use for executing the tx, the address should own some gas to pay for the Hyperlane message
+- `ORDER_ORIGIN`: the chain id of the order's origin chain
+- `ORDER_FILL_DEADLINE`: the `fillDeadline` used when opening the order
+- `ORDER_DATA`: the `orderData` used when opening the order
+
+you can find the `fillDeadline` and `orderData` inspecting the open transaction on etherscan
 
 ---
 

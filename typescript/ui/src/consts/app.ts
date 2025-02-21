@@ -7,9 +7,9 @@ export const MAIN_FONT = SpaceGrotesk({
   preload: true,
   fallback: ['sans-serif'],
 });
-export const APP_NAME = 'Intents Framework';
-export const APP_DESCRIPTION = 'A DApp for Hyperlane7683 Intents';
-export const APP_URL = 'intent-ui-template.vercel.app';
+export const APP_NAME = 'Open Intents Framework';
+export const APP_DESCRIPTION = 'Intents For Everyone, With Everyone';
+export const APP_URL = 'app.openintents.xyz';
 export const BRAND_COLOR = Color.primary;
 export const BACKGROUND_COLOR = Color.primary;
 export const BACKGROUND_IMAGE =

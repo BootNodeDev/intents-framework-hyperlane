@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 
 const { version } = require('./package.json')
-const { withSentryConfig } = require("@sentry/nextjs");
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })
@@ -82,8 +81,6 @@ const nextConfig = {
           fs: false,
           // fixes mapbox dependencies
           events: false,
-          // fixes sentry dependencies
-          process: false
         }
       };
     }
@@ -106,17 +103,4 @@ const nextConfig = {
   reactStrictMode: true,
 }
 
-const sentryOptions = {
-  org: "hyperlane",
-  project: "warp-ui",
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  hideSourceMaps: true,
-  tunnelRoute: "/monitoring-tunnel",
-  bundleSizeOptimizations: {
-    excludeDebugStatements: true,
-    excludeReplayIframe: true,
-    excludeReplayShadowDom: true,
-  },
-};
-
-module.exports = withBundleAnalyzer(withSentryConfig(nextConfig, sentryOptions));
+module.exports = withBundleAnalyzer(nextConfig);
