@@ -59,15 +59,15 @@ cases and requirements.
 
 | Blockchain | Proxy | Implementation |
 | ---------- | ----- | -------------- |
-| Mainnet    | [`0x5F69f9aeEB44e713fBFBeb136d712b22ce49eb88`](https://etherscan.io/address/0x5F69f9aeEB44e713fBFBeb136d712b22ce49eb88) | [`0xF84c1bf6dC94f9DBdef81E61e974A6a8888263F9`](https://etherscan.io/address/0xF84c1bf6dC94f9DBdef81E61e974A6a8888263F9)  |
-| Optimism   | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://optimistic.etherscan.io/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://optimistic.etherscan.io/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
-| Arbitrum   | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://arbiscan.io/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://arbiscan.io/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
-| Base       | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://basescan.org/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://basescan.org/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
-| Gnosis     | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://gnosisscan.io/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://gnosisscan.io/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
-| Berachain  | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://berascan.com/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://berascan.com/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
-| Form       | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://explorer.form.network/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://explorer.form.network/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
-| Unichain   | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://uniscan.xyz/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://uniscan.xyz/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
-| Artela     | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://artscan.artela.network/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc`](https://artscan.artela.network/address/0x8f9508C68ED70A7A02A4f8190604a81Ca8D79BEc) |
+| Mainnet    | [`0x5F69f9aeEB44e713fBFBeb136d712b22ce49eb88`](https://etherscan.io/address/0x5F69f9aeEB44e713fBFBeb136d712b22ce49eb88) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://etherscan.io/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb)  |
+| Optimism   | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://optimistic.etherscan.io/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://optimistic.etherscan.io/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb) |
+| Arbitrum   | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://arbiscan.io/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://arbiscan.io/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb) |
+| Base       | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://basescan.org/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://basescan.org/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb) |
+| Gnosis     | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://gnosisscan.io/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://gnosisscan.io/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb) |
+| Berachain  | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://berascan.com/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://berascan.com/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb) |
+| Form       | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://explorer.form.network/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://explorer.form.network/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb) |
+| Unichain   | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://uniscan.xyz/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://uniscan.xyz/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb) |
+| Artela     | [`0x9245A985d2055CeA7576B293Da8649bb6C5af9D0`](https://artscan.artela.network/address/0x9245A985d2055CeA7576B293Da8649bb6C5af9D0) | [`0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb`](https://artscan.artela.network/address/0x5A854219B9e49a73074b55B7e006CB0Bc2cf91Eb) |
 
 
 ## Scripts
