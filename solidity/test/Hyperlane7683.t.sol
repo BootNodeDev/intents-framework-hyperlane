@@ -19,9 +19,13 @@ import { Hyperlane7683 } from "../src/Hyperlane7683.sol";
 import { Hyperlane7683Message } from "../src/libs/Hyperlane7683Message.sol";
 
 contract Hyperlane7683ForTest is Hyperlane7683 {
+    uint32[] public  refundedMessageOrigin;
+    bytes32[] public refundedMessageSender;
     bytes32[] public refundedOrderId;
     bytes32[] public settledOrderId;
     bytes32[] public settledOrderReceiver;
+    uint32[] public  settledMessageOrigin;
+    bytes32[] public settledMessageSender;
 
     constructor(address _mailbox, address permitt2) Hyperlane7683(_mailbox, permitt2) { }
 
@@ -40,12 +44,25 @@ contract Hyperlane7683ForTest is Hyperlane7683 {
         _dispatchRefund(_originDomain, _orderIds);
     }
 
-    function _handleSettleOrder(bytes32 _orderId, bytes32 _receiver) internal override {
+    function _handleSettleOrder(
+        uint32 _messageOrigin,
+        bytes32 _messageSender,
+        bytes32 _orderId,
+        bytes32 _receiver
+    ) internal override {
+        settledMessageOrigin.push(_messageOrigin);
+        settledMessageSender.push(_messageSender);
         settledOrderId.push(_orderId);
         settledOrderReceiver.push(_receiver);
     }
 
-    function _handleRefundOrder(bytes32 _orderId) internal override {
+    function _handleRefundOrder(
+        uint32 _messageOrigin,
+        bytes32 _messageSender,
+        bytes32 _orderId
+    ) internal override {
+        refundedMessageOrigin.push(_messageOrigin);
+        refundedMessageSender.push(_messageSender);
         refundedOrderId.push(_orderId);
     }
 
@@ -251,8 +268,15 @@ contract Hyperlane7683Test is BaseTest {
 
         environment.processNextPendingMessageFromDestination();
 
+        assertEq(originRouter.settledMessageOrigin(0), destination);
+        assertEq(originRouter.settledMessageOrigin(1), destination);
+
+        assertEq(originRouter.settledMessageSender(0), TypeCasts.addressToBytes32(address(destinationRouter)));
+        assertEq(originRouter.settledMessageSender(1), TypeCasts.addressToBytes32(address(destinationRouter)));
+
         assertEq(originRouter.settledOrderId(0), orderIds[0]);
         assertEq(originRouter.settledOrderId(1), orderIds[1]);
+
         assertEq(originRouter.settledOrderReceiver(0), TypeCasts.addressToBytes32(receiver1));
         assertEq(originRouter.settledOrderReceiver(1), TypeCasts.addressToBytes32(receiver2));
     }

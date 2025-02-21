@@ -85,6 +85,9 @@ abstract contract BasicSwap7683 is Base7683 {
 
     /**
      * @dev Settles multiple orders by dispatching the settlement instructions.
+     * The proper status of all the orders (filled) is validated on the Base7683 before calling this function.
+     * It assumes that all orders were originated in the same originDomain so it uses the the one from the first one for
+     * dispatching the message, but if some order differs on the originDomain it can be re-settle later.
      * @param _orderIds The IDs of the orders to settle.
      * @param _ordersOriginData The original data of the orders.
      * @param _ordersFillerData The filler data for the orders.
@@ -98,55 +101,63 @@ abstract contract BasicSwap7683 is Base7683 {
         override
     {
         // at this point we are sure all orders are filled, use the first order to get the originDomain
-        // if some order differs on the originDomain ir can be re-settle later
+        // if some order differs on the originDomain it can be re-settle later
         _dispatchSettle(OrderEncoder.decode(_ordersOriginData[0]).originDomain, _orderIds, _ordersFillerData);
     }
 
     /**
      * @dev Refunds multiple OnchainCrossChain orders by dispatching refund instructions.
+     * The proper status of all the orders (NOT filled and expired) is validated on the Base7683 before calling this
+     * function.
+     * It assumes that all orders were originated in the same originDomain so it uses the the one from the first one for
+     * dispatching the message, but if some order differs on the originDomain it can be re-refunded later.
      * @param _orders The orders to refund.
      * @param _orderIds The IDs of the orders to refund.
      */
     function _refundOrders(OnchainCrossChainOrder[] memory _orders, bytes32[] memory _orderIds) internal override {
-        // at this point we are sure all orders are filled, use the first order to get the originDomain
-        // if some order differs on the originDomain ir can be re-refunded later
         _dispatchRefund(OrderEncoder.decode(_orders[0].orderData).originDomain, _orderIds);
     }
 
     /**
      * @dev Refunds multiple GaslessCrossChain orders by dispatching refund instructions.
+     * The proper status of all the orders (NOT filled and expired) is validated on the Base7683 before calling this
+     * function.
+     * It assumes that all orders were originated in the same originDomain so it uses the the one from the first one for
+     * dispatching the message, but if some order differs on the originDomain it can be re-refunded later.
      * @param _orders The orders to refund.
      * @param _orderIds The IDs of the orders to refund.
      */
     function _refundOrders(GaslessCrossChainOrder[] memory _orders, bytes32[] memory _orderIds) internal override {
-        // at this point we are sure all orders are filled, use the first order to get the originDomain
-        // if some order differs on the originDomain ir can be re-refunded later
         _dispatchRefund(OrderEncoder.decode(_orders[0].orderData).originDomain, _orderIds);
     }
 
     /**
      * @dev Handles settling an individual order, should be called by the inheriting contract when receiving a setting
      * instruction from a remote chain.
+     * @param _messageOrigin The domain from which the message originates (unused in this implementation).
+     * @param _messageSender The address of the sender on the origin domain (unused in this implementation).
      * @param _orderId The ID of the order to settle.
      * @param _receiver The receiver address (encoded as bytes32).
      */
-    function _handleSettleOrder(bytes32 _orderId, bytes32 _receiver) internal virtual {
-        // check if the order is opened to ensure it belongs to this domain, skip otherwise
-        if (orderStatus[_orderId] != OPENED) return;
+    function _handleSettleOrder(
+        uint32 _messageOrigin,
+        bytes32 _messageSender,
+        bytes32 _orderId,
+        bytes32 _receiver
+    ) internal virtual {
+        (
+            bool isEligible,
+            OrderData memory orderData
+        ) = _checkOrderEligibility(_messageOrigin, _messageSender, _orderId);
 
-        (,bytes memory _orderData) = abi.decode(openOrders[_orderId], (bytes32, bytes));
-        OrderData memory orderData = OrderEncoder.decode(_orderData);
+        if (!isEligible) return;
 
         orderStatus[_orderId] = SETTLED;
 
         address receiver = TypeCasts.bytes32ToAddress(_receiver);
         address inputToken = TypeCasts.bytes32ToAddress(orderData.inputToken);
 
-        if (inputToken == address(0)) {
-            Address.sendValue(payable(receiver), orderData.amountIn);
-        } else {
-            IERC20(inputToken).safeTransfer(receiver, orderData.amountIn);
-        }
+        _transferTokenOut(inputToken, receiver, orderData.amountIn);
 
         emit Settled(_orderId, receiver);
     }
@@ -154,27 +165,69 @@ abstract contract BasicSwap7683 is Base7683 {
     /**
      * @dev Handles refunding an individual order, should be called by the inheriting contract when receiving a
      * refunding instruction from a remote chain.
+     * @param _messageOrigin The domain from which the message originates (unused in this implementation).
+     * @param _messageSender The address of the sender on the origin domain (unused in this implementation).
      * @param _orderId The ID of the order to refund.
      */
-    function _handleRefundOrder(bytes32 _orderId) internal virtual {
-        // check if the order is opened to ensure it belongs to this domain, skip otherwise
-        if (orderStatus[_orderId] != OPENED) return;
+    function _handleRefundOrder(uint32 _messageOrigin, bytes32 _messageSender, bytes32 _orderId) internal virtual {
+        (
+            bool isEligible,
+            OrderData memory orderData
+        ) = _checkOrderEligibility(_messageOrigin, _messageSender, _orderId);
 
-        (,bytes memory _orderData) = abi.decode(openOrders[_orderId], (bytes32, bytes));
-        OrderData memory orderData = OrderEncoder.decode(_orderData);
+        if (!isEligible) return;
 
         orderStatus[_orderId] = REFUNDED;
 
         address orderSender = TypeCasts.bytes32ToAddress(orderData.sender);
         address inputToken = TypeCasts.bytes32ToAddress(orderData.inputToken);
 
-        if (inputToken == address(0)) {
-            Address.sendValue(payable(orderSender), orderData.amountIn);
-        } else {
-            IERC20(inputToken).safeTransfer(orderSender, orderData.amountIn);
-        }
+        _transferTokenOut(inputToken, orderSender, orderData.amountIn);
 
         emit Refunded(_orderId, orderSender);
+    }
+
+    /**
+    * @notice Checks if order is eligible for settlement or refund .
+    * @dev Order must be OPENED and the message was sent from the appropriated chain and contract.
+    * @param _messageOrigin The origin domain of the message.
+    * @param _messageSender The sender identifier of the message.
+    * @param _orderId The unique identifier of the order.
+    * @return A boolean indicating if the order is valid, and the decoded OrderData structure.
+    */
+    function _checkOrderEligibility(
+        uint32 _messageOrigin,
+        bytes32 _messageSender,
+        bytes32 _orderId
+    ) internal virtual returns (bool, OrderData memory) {
+        OrderData memory orderData;
+
+        // check if the order is opened to ensure it belongs to this domain, skip otherwise
+        if (orderStatus[_orderId] != OPENED) return (false, orderData);
+
+        (,bytes memory _orderData) = abi.decode(openOrders[_orderId], (bytes32, bytes));
+        orderData = OrderEncoder.decode(_orderData);
+
+        if (orderData.destinationDomain != _messageOrigin || orderData.destinationSettler != _messageSender)
+            return (false, orderData);
+
+        return (true, orderData);
+    }
+
+    /**
+    * @notice Transfers tokens or ETH out of the contract.
+    * @dev If _token is the zero address, transfers ETH using a safe method; otherwise, performs an ERC20 token
+    * transfer.
+    * @param _token The address of the token to transfer (use address(0) for ETH).
+    * @param _to The recipient address.
+    * @param _amount The amount of tokens or ETH to transfer.
+    */
+    function _transferTokenOut(address _token, address _to, uint256 _amount) internal {
+        if (_token == address(0)) {
+            Address.sendValue(payable(_to), _amount);
+        } else {
+            IERC20(_token).safeTransfer(_to, _amount);
+        }
     }
 
     /**

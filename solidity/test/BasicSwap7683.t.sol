@@ -92,12 +92,30 @@ contract BasicSwap7683ForTest is BasicSwap7683 {
         (rOrder,,) = _resolvedOrder(_orderType, _sender, _openDeadline, _fillDeadline, _orderData);
     }
 
-    function handleSettleOrder(bytes32 _orderId, bytes32 _receiver) public {
-        _handleSettleOrder(_orderId, _receiver);
+    function handleSettleOrder(
+        uint32 _messageOrigin,
+        bytes32 _messageSender,
+        bytes32 _orderId,
+        bytes32 _receiver
+    ) public {
+        _handleSettleOrder(
+            _messageOrigin,
+            _messageSender,
+            _orderId,
+            _receiver
+        );
     }
 
-    function handleRefundOrder(bytes32 _orderId) public {
-        _handleRefundOrder(_orderId);
+    function handleRefundOrder(
+        uint32 _messageOrigin,
+        bytes32 _messageSender,
+        bytes32 _orderId
+    ) public {
+        _handleRefundOrder(
+            _messageOrigin,
+            _messageSender,
+            _orderId
+        );
     }
 
     function setOrderOpened(bytes32 _orderId, OrderData memory orderData) public {
@@ -140,6 +158,9 @@ contract BasicSwap7683Test is BaseTest {
     using TypeCasts for address;
 
     BasicSwap7683ForTest internal baseSwap;
+
+    uint32 internal wrongMsgOrigin = 678;
+    bytes32 internal wrongMsgSender = makeAddr("wrongMsgSender").addressToBytes32();
 
     function setUp() public override {
         super.setUp();
@@ -279,7 +300,12 @@ contract BasicSwap7683Test is BaseTest {
         vm.expectEmit(false, false, false, true);
         emit Settled(orderId, karpincho);
 
-        baseSwap.handleSettleOrder(orderId, TypeCasts.addressToBytes32(karpincho));
+        baseSwap.handleSettleOrder(
+            destination,
+            counterpart.addressToBytes32(),
+            orderId,
+            TypeCasts.addressToBytes32(karpincho)
+        );
 
         uint256[] memory balancesAfter = _balances(inputToken);
 
@@ -304,7 +330,12 @@ contract BasicSwap7683Test is BaseTest {
         vm.expectEmit(false, false, false, true);
         emit Settled(orderId, karpincho);
 
-        baseSwap.handleSettleOrder(orderId, TypeCasts.addressToBytes32(karpincho));
+        baseSwap.handleSettleOrder(
+            destination,
+            counterpart.addressToBytes32(),
+            orderId,
+            TypeCasts.addressToBytes32(karpincho)
+        );
 
         uint256[] memory balancesAfter = _balances();
 
@@ -321,7 +352,56 @@ contract BasicSwap7683Test is BaseTest {
 
         uint256[] memory balancesBefore = _balances(inputToken);
 
-        baseSwap.handleSettleOrder(orderId, TypeCasts.addressToBytes32(karpincho));
+        baseSwap.handleSettleOrder(
+            destination,
+            counterpart.addressToBytes32(),
+            orderId,
+            TypeCasts.addressToBytes32(karpincho)
+        );
+
+        uint256[] memory balancesAfter = _balances(inputToken);
+
+        assertEq(baseSwap.orderStatus(orderId), baseSwap.UNKNOWN());
+        assertEq(balancesAfter[balanceId[address(baseSwap)]], balancesBefore[balanceId[address(baseSwap)]]);
+        assertEq(balancesAfter[balanceId[karpincho]], balancesBefore[balanceId[karpincho]]);
+    }
+
+    function test__handleSettleOrder_wrong_mssgOrigin() public {
+        bytes32 orderId = bytes32("order1");
+        // don't set the order as opened
+
+        deal(address(inputToken), address(baseSwap), 1_000_000, true);
+
+        uint256[] memory balancesBefore = _balances(inputToken);
+
+        baseSwap.handleSettleOrder(
+            wrongMsgOrigin,
+            counterpart.addressToBytes32(),
+            orderId,
+            TypeCasts.addressToBytes32(karpincho)
+        );
+
+        uint256[] memory balancesAfter = _balances(inputToken);
+
+        assertEq(baseSwap.orderStatus(orderId), baseSwap.UNKNOWN());
+        assertEq(balancesAfter[balanceId[address(baseSwap)]], balancesBefore[balanceId[address(baseSwap)]]);
+        assertEq(balancesAfter[balanceId[karpincho]], balancesBefore[balanceId[karpincho]]);
+    }
+
+    function test__handleSettleOrder_wrong_mssgSender() public {
+        bytes32 orderId = bytes32("order1");
+        // don't set the order as opened
+
+        deal(address(inputToken), address(baseSwap), 1_000_000, true);
+
+        uint256[] memory balancesBefore = _balances(inputToken);
+
+        baseSwap.handleSettleOrder(
+            destination,
+            wrongMsgSender,
+            orderId,
+            TypeCasts.addressToBytes32(karpincho)
+        );
 
         uint256[] memory balancesAfter = _balances(inputToken);
 
@@ -344,7 +424,11 @@ contract BasicSwap7683Test is BaseTest {
         vm.expectEmit(false, false, false, true);
         emit Refunded(orderId, kakaroto);
 
-        baseSwap.handleRefundOrder(orderId);
+        baseSwap.handleRefundOrder(
+            destination,
+            counterpart.addressToBytes32(),
+            orderId
+        );
 
         uint256[] memory balancesAfter = _balances(inputToken);
 
@@ -369,7 +453,11 @@ contract BasicSwap7683Test is BaseTest {
         vm.expectEmit(false, false, false, true);
         emit Refunded(orderId, kakaroto);
 
-        baseSwap.handleRefundOrder(orderId);
+        baseSwap.handleRefundOrder(
+            destination,
+            counterpart.addressToBytes32(),
+            orderId
+        );
 
         uint256[] memory balancesAfter = _balances();
 
@@ -387,7 +475,55 @@ contract BasicSwap7683Test is BaseTest {
 
         uint256[] memory balancesBefore = _balances(inputToken);
 
-        baseSwap.handleRefundOrder(orderId);
+        baseSwap.handleRefundOrder(
+            destination,
+            counterpart.addressToBytes32(),
+            orderId
+        );
+
+        uint256[] memory balancesAfter = _balances(inputToken);
+
+        assertEq(baseSwap.orderStatus(orderId), baseSwap.UNKNOWN());
+        assertEq(balancesAfter[balanceId[address(baseSwap)]], balancesBefore[balanceId[address(baseSwap)]]);
+        assertEq(balancesAfter[balanceId[karpincho]], balancesBefore[balanceId[karpincho]]);
+    }
+
+    function test__handleRefundOrder_wrong_mssgOrigin() public {
+        bytes32 orderId = bytes32("order1");
+
+        // don't set the order as opened
+
+        deal(address(inputToken), address(baseSwap), 1_000_000, true);
+
+        uint256[] memory balancesBefore = _balances(inputToken);
+
+        baseSwap.handleRefundOrder(
+            wrongMsgOrigin,
+            counterpart.addressToBytes32(),
+            orderId
+        );
+
+        uint256[] memory balancesAfter = _balances(inputToken);
+
+        assertEq(baseSwap.orderStatus(orderId), baseSwap.UNKNOWN());
+        assertEq(balancesAfter[balanceId[address(baseSwap)]], balancesBefore[balanceId[address(baseSwap)]]);
+        assertEq(balancesAfter[balanceId[karpincho]], balancesBefore[balanceId[karpincho]]);
+    }
+
+    function test__handleRefundOrder_wrong_mssgSender() public {
+        bytes32 orderId = bytes32("order1");
+
+        // don't set the order as opened
+
+        deal(address(inputToken), address(baseSwap), 1_000_000, true);
+
+        uint256[] memory balancesBefore = _balances(inputToken);
+
+        baseSwap.handleRefundOrder(
+            destination,
+            wrongMsgSender,
+            orderId
+        );
 
         uint256[] memory balancesAfter = _balances(inputToken);
 

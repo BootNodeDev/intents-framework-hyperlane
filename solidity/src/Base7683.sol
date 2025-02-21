@@ -226,7 +226,7 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
      * @param _orderId Unique order identifier for this order
      * @param _originData Data emitted on the origin to parameterize the fill
      * @param _fillerData Data provided by the filler to inform the fill or express their preferences. It should
-     * contain the bytes32 encoded address of the receiver which is the used at settlement time
+     * contain the bytes32 encoded address of the receiver which is used at settlement time
      */
     function fill(bytes32 _orderId, bytes calldata _originData, bytes calldata _fillerData) external payable virtual {
         if (orderStatus[_orderId] != UNKNOWN) revert InvalidOrderStatus();
@@ -244,7 +244,7 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
      * @dev Pays the filler the amount locked when the orders were opened.
      * The settled status should not be changed here but rather on the origin chain. To allow the filler to retry in
      * case some error occurs.
-     * Ensuring the order is not settled in the origin chain is the responsibility of the caller.
+     * Ensuring the order is eligible for settling in the origin chain is the responsibility of the caller.
      * @param _orderIds An array of IDs for the orders to settle.
      */
     function settle(bytes32[] calldata _orderIds) external payable {
@@ -267,7 +267,7 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
      * @notice Refunds a batch of expired GaslessCrossChainOrders on the chain where the orders were opened.
      * The refunded status should not be changed here but rather on the origin chain. To allow the user to retry in
      * case some error occurs.
-     * Ensuring the order is not refunded in the origin chain is the responsibility of the caller.
+     * Ensuring the order is eligible for refunding in the origin chain is the responsibility of the caller.
      * @param _orders An array of GaslessCrossChainOrders to refund.
      */
     function refund(GaslessCrossChainOrder[] memory _orders) external payable {
@@ -289,7 +289,7 @@ abstract contract Base7683 is IOriginSettler, IDestinationSettler {
      * @notice Refunds a batch of expired OnchainCrossChainOrder on the chain where the orders were opened.
      * The refunded status should not be changed here but rather on the origin chain. To allow the user to retry in
      * case some error occurs.
-     * Ensuring the order is not refunded in the origin chain is the responsibility of the caller.
+     * Ensuring the order is eligible for refunding the origin chain is the responsibility of the caller.
      * @param _orders An array of GaslessCrossChainOrders to refund.
      */
     function refund(OnchainCrossChainOrder[] memory _orders) external payable {

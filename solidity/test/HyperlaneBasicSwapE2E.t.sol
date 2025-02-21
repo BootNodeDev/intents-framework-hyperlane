@@ -475,6 +475,98 @@ contract HyperlaneBasicSwapE2E is BaseTest {
         assertEq(balancesAfterRefund[balanceId[kakaroto]], balancesBeforeRefund[balanceId[kakaroto]] + amount);
     }
 
+    function test_open_refund_wrong_mssgOrigin() public {
+        // open
+        OrderData memory orderData = _prepareOrderData();
+        orderData.destinationDomain = 678;
+
+        OnchainCrossChainOrder memory order =
+            _prepareOnchainOrder(OrderEncoder.encode(orderData), orderData.fillDeadline, OrderEncoder.orderDataType());
+
+        vm.startPrank(kakaroto);
+        inputToken.approve(address(originRouter), amount);
+
+        vm.recordLogs();
+        originRouter.open(order);
+
+        (bytes32 orderId,) = _getOrderIDFromLogs();
+
+        // refund
+        vm.warp(orderData.fillDeadline + 1);
+
+        bytes32[] memory orderIds = new bytes32[](1);
+        orderIds[0] = orderId;
+
+        vm.expectEmit(false, false, false, true);
+        emit Refund(orderIds);
+
+        OnchainCrossChainOrder[] memory orders = new OnchainCrossChainOrder[](1);
+        orders[0] = order;
+
+        destinationRouter.refund{ value: gasPaymentQuote }(orders);
+
+        assertEq(destinationRouter.orderStatus(orderId), destinationRouter.UNKNOWN());
+
+        uint256[] memory balancesBeforeRefund = _balances(inputToken);
+
+        environment.processNextPendingMessageFromDestination();
+
+        uint256[] memory balancesAfterRefund = _balances(inputToken);
+
+        assertEq(originRouter.orderStatus(orderId), originRouter.OPENED());
+        assertEq(
+            balancesAfterRefund[balanceId[address(originRouter)]],
+            balancesBeforeRefund[balanceId[address(originRouter)]]
+        );
+        assertEq(balancesAfterRefund[balanceId[kakaroto]], balancesBeforeRefund[balanceId[kakaroto]]);
+    }
+
+    function test_open_refund_wrong_mssgSender() public {
+        // open
+        OrderData memory orderData = _prepareOrderData();
+        orderData.destinationSettler = makeAddr("someSettler").addressToBytes32();
+
+        OnchainCrossChainOrder memory order =
+            _prepareOnchainOrder(OrderEncoder.encode(orderData), orderData.fillDeadline, OrderEncoder.orderDataType());
+
+        vm.startPrank(kakaroto);
+        inputToken.approve(address(originRouter), amount);
+
+        vm.recordLogs();
+        originRouter.open(order);
+
+        (bytes32 orderId,) = _getOrderIDFromLogs();
+
+        // refund
+        vm.warp(orderData.fillDeadline + 1);
+
+        bytes32[] memory orderIds = new bytes32[](1);
+        orderIds[0] = orderId;
+
+        vm.expectEmit(false, false, false, true);
+        emit Refund(orderIds);
+
+        OnchainCrossChainOrder[] memory orders = new OnchainCrossChainOrder[](1);
+        orders[0] = order;
+
+        destinationRouter.refund{ value: gasPaymentQuote }(orders);
+
+        assertEq(destinationRouter.orderStatus(orderId), destinationRouter.UNKNOWN());
+
+        uint256[] memory balancesBeforeRefund = _balances(inputToken);
+
+        environment.processNextPendingMessageFromDestination();
+
+        uint256[] memory balancesAfterRefund = _balances(inputToken);
+
+        assertEq(originRouter.orderStatus(orderId), originRouter.OPENED());
+        assertEq(
+            balancesAfterRefund[balanceId[address(originRouter)]],
+            balancesBeforeRefund[balanceId[address(originRouter)]]
+        );
+        assertEq(balancesAfterRefund[balanceId[kakaroto]], balancesBeforeRefund[balanceId[kakaroto]]);
+    }
+
     function test_native_open_refund() public {
         // open
         OrderData memory orderData = _prepareOrderData();

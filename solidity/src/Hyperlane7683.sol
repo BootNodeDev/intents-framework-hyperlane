@@ -84,19 +84,19 @@ contract Hyperlane7683 is GasRouter, BasicSwap7683 {
     /**
      * @notice Handles incoming messages.
      * @dev Decodes the message and processes settlement or refund operations accordingly.
-     * _originDomain The domain from which the message originates (unused in this implementation).
-     * _sender The address of the sender on the origin domain (unused in this implementation).
+     * @param _messageOrigin The domain from which the message originates (unused in this implementation).
+     * @param _messageSender The address of the sender on the origin domain (unused in this implementation).
      * @param _message The encoded message received via Hyperlane.
      */
-    function _handle(uint32, bytes32, bytes calldata _message) internal virtual override {
+    function _handle(uint32 _messageOrigin, bytes32 _messageSender, bytes calldata _message) internal virtual override {
         (bool _settle, bytes32[] memory _orderIds, bytes[] memory _ordersFillerData) =
             Hyperlane7683Message.decode(_message);
 
         for (uint256 i = 0; i < _orderIds.length; i++) {
             if (_settle) {
-                _handleSettleOrder(_orderIds[i], abi.decode(_ordersFillerData[i], (bytes32)));
+                _handleSettleOrder(_messageOrigin, _messageSender, _orderIds[i], abi.decode(_ordersFillerData[i], (bytes32)));
             } else {
-                _handleRefundOrder(_orderIds[i]);
+                _handleRefundOrder(_messageOrigin, _messageSender, _orderIds[i]);
             }
         }
     }
