@@ -1,3 +1,4 @@
+import { get } from '@vercel/edge-config';
 import { geolocation } from '@vercel/functions';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -44,7 +45,8 @@ const BLOCKED_REGIONS = [
   },
 ];
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
+  // country restriction
   const { country, region } = geolocation(req);
 
   if (country && BLOCKED_COUNTRIES.includes(country)) {
@@ -59,5 +61,15 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL('/blocked', req.url));
   }
 
+  // maintenance mode
+  const isInMaintenanceMode = await get<boolean>('isInMaintenanceMode');
+
+  if (isInMaintenanceMode) {
+    req.nextUrl.pathname = '/maintenance';
+
+    return NextResponse.rewrite(req.nextUrl);
+  }
+
+  // default
   return NextResponse.next();
 }

@@ -10,7 +10,7 @@ type Metadata = {
   protocolName: string;
 };
 
-type ParsedArgs = {
+export type ParsedArgs = {
   orderId: string;
   senderAddress: string;
   recipients: Array<{
@@ -46,7 +46,11 @@ export abstract class BaseFiller<
   }
 
   create() {
-    return async (parsedArgs: TParsedArgs, originChainName: string) => {
+    return async (
+      parsedArgs: TParsedArgs,
+      originChainName: string,
+      blockNumber: number,
+    ) => {
       const origin = await this.retrieveOriginInfo(parsedArgs, originChainName);
       const target = await this.retrieveTargetInfo(parsedArgs);
 
@@ -66,9 +70,17 @@ export abstract class BaseFiller<
 
       const { data } = intent;
 
-      await this.fill(parsedArgs, data, originChainName);
+      try {
+        await this.fill(parsedArgs, data, originChainName, blockNumber);
 
-      await this.settleOrder(parsedArgs, data);
+        await this.settleOrder(parsedArgs, data);
+      } catch (error) {
+        this.log.error({
+          msg: `Failed processing intent`,
+          intent: `${this.metadata.protocolName}-${parsedArgs.orderId}`,
+          error: JSON.stringify(error),
+        });
+      }
     };
   }
 
@@ -92,10 +104,7 @@ export abstract class BaseFiller<
     const { senderAddress, recipients } = parsedArgs;
 
     if (!this.isAllowedIntent({ senderAddress, recipients })) {
-      return {
-        error: "Not allowed intent",
-        success: false,
-      };
+      throw new Error("Not allowed intent");
     }
 
     const result = await this.evaluateRules(parsedArgs);
@@ -125,6 +134,7 @@ export abstract class BaseFiller<
     parsedArgs: TParsedArgs,
     data: TIntentData,
     originChainName: string,
+    blockNumber: number,
   ): Promise<void>;
 
   protected async settleOrder(parsedArgs: TParsedArgs, data: TIntentData) {

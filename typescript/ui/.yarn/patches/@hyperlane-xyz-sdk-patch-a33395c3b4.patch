@@ -1,0 +1,25 @@
+diff --git a/dist/warp/WarpCore.js b/dist/warp/WarpCore.js
+index cfa46878d3972161f69b0620cccbc4ee4c66b7cd..eff531f0e60a9d2538b7db0d5fb03e884a9403b1 100644
+--- a/dist/warp/WarpCore.js
++++ b/dist/warp/WarpCore.js
+@@ -239,7 +239,7 @@ export class WarpCore {
+      * Computes the max transferrable amount of the from the given
+      * token balance, accounting for local and interchain gas fees
+      */
+-    async getMaxTransferAmount({ balance, destination, sender, senderPubKey, feeEstimate, }) {
++    async getMaxTransferAmount({ balance, destination, sender, senderPubKey, feeEstimate, topMax, }) {
+         const originToken = balance.token;
+         if (!feeEstimate) {
+             feeEstimate = await this.estimateTransferRemoteFees({
+@@ -255,7 +255,10 @@ export class WarpCore {
+             maxAmount = maxAmount.minus(localQuote.amount);
+         }
+         if (originToken.isFungibleWith(interchainQuote.token)) {
+-            maxAmount = maxAmount.minus(interchainQuote.amount);
++            if (topMax !== undefined && maxAmount.amount > originToken.amount(topMax).plus(interchainQuote.amount).amount) {
++                maxAmount = originToken.amount(topMax);
++            } else
++                maxAmount = maxAmount.minus(interchainQuote.amount);
+         }
+         if (maxAmount.amount > 0)
+             return maxAmount;

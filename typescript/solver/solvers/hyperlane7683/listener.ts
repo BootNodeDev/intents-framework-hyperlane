@@ -7,15 +7,16 @@ import type {
 } from "../../typechain/hyperlane7683/contracts/Hyperlane7683.js";
 import { BaseListener } from "../BaseListener.js";
 import { metadata } from "./config/index.js";
-import type { OpenEventArgs } from "./types.js";
+import type { OpenEventArgs, Hyperlane7683Metadata } from "./types.js";
 import { log } from "./utils.js";
+import { getLastIndexedBlocks } from "./db.js";
 
 export class Hyperlane7683Listener extends BaseListener<
   Hyperlane7683,
   OpenEvent,
   OpenEventArgs
 > {
-  constructor() {
+  constructor(metadata: Hyperlane7683Metadata) {
     const { originSettlers, protocolName } = metadata;
     const hyperlane7683Metadata = { contracts: originSettlers, protocolName };
 
@@ -38,4 +39,22 @@ export class Hyperlane7683Listener extends BaseListener<
   }
 }
 
-export const create = () => new Hyperlane7683Listener().create();
+export const create = async () => {
+  const { originSettlers } = metadata;
+  const blocksByChain = await getLastIndexedBlocks();
+
+  metadata.originSettlers = originSettlers.map((originSettler) => {
+    const chainBlockNumber = blocksByChain[originSettler.chainName]?.blockNumber;
+
+    if (chainBlockNumber && chainBlockNumber >= (originSettler.initialBlock ?? 0)) {
+      return {
+        ...originSettler,
+        initialBlock: blocksByChain[originSettler.chainName].blockNumber,
+        processedIds: blocksByChain[originSettler.chainName].processedIds,
+      };
+    }
+    return originSettler;
+  });
+
+  return new Hyperlane7683Listener(metadata).create();
+};
