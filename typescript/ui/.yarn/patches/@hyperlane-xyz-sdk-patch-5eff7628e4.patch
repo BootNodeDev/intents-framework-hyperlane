@@ -1,0 +1,41 @@
+diff --git a/dist/token/Token.js b/dist/token/Token.js
+index ede3bcf64c38b51067db8ddeb5f7722b921c4e0b..8d7c4364e4c67b86f7e2341e1fb13a540d9f157e 100644
+--- a/dist/token/Token.js
++++ b/dist/token/Token.js
+@@ -44,6 +44,7 @@ export class EvmIntentTokenAdapter extends EvmTokenAdapter {
+     sender,
+     recipient,
+     outputToken,
++    destinationSettler,
+     amountIn,
+     amountOut,
+     destinationDomain,
+@@ -88,7 +89,7 @@ export class EvmIntentTokenAdapter extends EvmTokenAdapter {
+             senderNonce: BigInt(senderNonce.toString()),
+             originDomain: this.multiProvider.getChainId(this.chainName),
+             destinationDomain: parseInt(destinationDomain),
+-            destinationSettler: pad(this.addresses.router),
++            destinationSettler: pad(destinationSettler),
+             fillDeadline: parseInt(fillDeadline),
+             data: '0x',
+           },
+diff --git a/dist/warp/WarpCore.js b/dist/warp/WarpCore.js
+index eff531f0e60a9d2538b7db0d5fb03e884a9403b1..87c23e856061391a89b32b6c015b3fffb9296566 100644
+--- a/dist/warp/WarpCore.js
++++ b/dist/warp/WarpCore.js
+@@ -193,10 +193,14 @@ export class WarpCore {
+             };
+             transactions.push(approveTx);
+         }
++
++        const outputToken = token.getConnections().find((c) => c.token.chainName === destination)
++
+         const transferTxReq = await adapter.populateOpenOrderTx({
+             sender,
+             recipient,
+-            outputToken: token.getConnections().find((c) => c.token.chainName === destination)?.token.addressOrDenom,
++            outputToken: outputToken.token.addressOrDenom,
++            destinationSettler: outputToken.token.collateralAddressOrDenom,
+             amountIn: amount.toString(),
+             amountOut: (amount === 1n ? amount : amount - interchainFee.amount).toString(),
+             destinationDomain: `${destinationDomainId}`,

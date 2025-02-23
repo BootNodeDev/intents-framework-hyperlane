@@ -11,7 +11,7 @@ import { assembleWarpCoreConfig } from './tokens/warpCoreConfig';
 import { FinalTransferStatuses, TransferContext, TransferStatus } from './transfer/types';
 
 // Increment this when persist state has breaking changes
-const PERSIST_STATE_VERSION = 2;
+const PERSIST_STATE_VERSION = 3;
 
 // Keeping everything here for now as state is simple
 // Will refactor into slices as necessary
@@ -37,7 +37,7 @@ export interface AppState {
   updateTransferStatus: (
     i: number,
     s: TransferStatus,
-    options?: { msgId?: string; originTxHash?: string },
+    options?: { msgId?: string; originTxHash?: string; orderId?: string; remoteTxHash?: string },
   ) => void;
   failUnconfirmedTransfers: () => void;
 
@@ -91,7 +91,8 @@ export const useStore = create<AppState>()(
           const txs = [...state.transfers];
           txs[i].status = s;
           txs[i].msgId ||= options?.msgId;
-          txs[i].originTxHash ||= options?.originTxHash;
+          txs[i].orderId ||= options?.orderId;
+          txs[i].remoteTxHash ||= options?.remoteTxHash;
           return {
             transfers: txs,
           };
@@ -99,9 +100,14 @@ export const useStore = create<AppState>()(
       },
       failUnconfirmedTransfers: () => {
         set((state) => ({
-          transfers: state.transfers.map((t) =>
-            FinalTransferStatuses.includes(t.status) ? t : { ...t, status: TransferStatus.Failed },
-          ),
+          transfers: state.transfers.map((t) => {
+            if (t.status === TransferStatus.WaitingForFulfillment && t.orderId) {
+              return { ...t, status: TransferStatus.Delivered };
+            }
+            return FinalTransferStatuses.includes(t.status)
+              ? t
+              : { ...t, status: TransferStatus.Failed };
+          }),
         }));
       },
 
